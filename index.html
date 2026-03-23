@@ -25,46 +25,48 @@
         <span class="pill">Offline PWA</span>
       </div>
 
-      <div class="grid">
-        <div class="control-block">
+      <div class="grid compact-grid">
+        <label class="control-block select-block">
           <span>Procedure</span>
-          <div id="procedureGroup" class="segmented" role="tablist" aria-label="Procedure">
-            <button type="button" class="seg-btn active" data-target="procedure" data-value="offshore">Offshore</button>
-            <button type="button" class="seg-btn" data-target="procedure" data-value="clear">Clear / CAT B</button>
-            <button type="button" class="seg-btn" data-target="procedure" data-value="confined">Confined</button>
+          <div class="select-wrap">
+            <select id="procedure" aria-label="Procedure">
+              <option value="offshore" selected>Offshore Helideck</option>
+              <option value="clear">Clear Area / CAT B</option>
+              <option value="confined">Confined Area</option>
+            </select>
           </div>
-          <input id="procedure" type="hidden" value="offshore">
-        </div>
+        </label>
 
-        <div class="control-block">
+        <label class="control-block select-block">
           <span>Configuration</span>
-          <div id="configurationGroup" class="segmented" role="tablist" aria-label="Configuration">
-            <button type="button" class="seg-btn active" data-target="configuration" data-value="standard">Standard</button>
-            <button type="button" class="seg-btn" data-target="configuration" data-value="eaps_off">EAPS OFF</button>
-            <button type="button" class="seg-btn" data-target="configuration" data-value="eaps_on">EAPS ON</button>
-            <button type="button" class="seg-btn" data-target="configuration" data-value="ibf">IBF</button>
+          <div class="select-wrap">
+            <select id="configuration" aria-label="Configuration">
+              <option value="standard" selected>Standard</option>
+              <option value="eaps_off">EAPS OFF</option>
+              <option value="eaps_on">EAPS ON</option>
+              <option value="ibf">IBF Installed</option>
+            </select>
           </div>
-          <input id="configuration" type="hidden" value="standard">
-        </div>
+        </label>
 
-        <label class="field-half">
+        <label class="field-half compact-field">
           <span>Pressure Altitude (ft)</span>
           <input id="pressureAltitude" type="number" inputmode="numeric" enterkeyhint="next" placeholder="1200">
         </label>
 
-        <label class="field-half">
+        <label class="field-half compact-field narrow-field">
           <span>OAT (°C)</span>
-          <input id="oat" type="number" inputmode="decimal" enterkeyhint="next" placeholder="28">
+          <input id="oat" type="number" inputmode="numeric" enterkeyhint="next" placeholder="28" maxlength="2">
         </label>
 
-        <label class="field-half">
+        <label class="field-half compact-field">
           <span>Actual Weight (kg)</span>
-          <input id="actualWeight" type="number" inputmode="decimal" enterkeyhint="next" placeholder="6550">
+          <input id="actualWeight" type="number" inputmode="numeric" enterkeyhint="next" placeholder="6550">
         </label>
 
-        <label id="headwindWrap" class="field-half">
+        <label id="headwindWrap" class="field-half compact-field narrow-field">
           <span>Headwind Component (kt)</span>
-          <input id="headwind" type="number" inputmode="decimal" enterkeyhint="done" placeholder="15">
+          <input id="headwind" type="number" inputmode="numeric" enterkeyhint="done" placeholder="15">
         </label>
       </div>
 

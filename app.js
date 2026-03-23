@@ -2,8 +2,6 @@ let deferredPrompt = null;
 const installBtn = document.getElementById('installBtn');
 const procedureEl = document.getElementById('procedure');
 const configurationEl = document.getElementById('configuration');
-const procedureGroup = document.getElementById('procedureGroup');
-const configurationGroup = document.getElementById('configurationGroup');
 const paEl = document.getElementById('pressureAltitude');
 const oatEl = document.getElementById('oat');
 const weightEl = document.getElementById('actualWeight');
@@ -21,7 +19,6 @@ const statusText = document.getElementById('statusText');
 const maxWeightEl = document.getElementById('maxWeight');
 const marginEl = document.getElementById('margin');
 
-
 const autoAdvanceRules = [
   { el: paEl, next: oatEl, minDigits: 3 },
   { el: oatEl, next: weightEl, minDigits: 2 },
@@ -30,11 +27,14 @@ const autoAdvanceRules = [
   { el: headwindEl, next: runBtn, minDigits: 1 }
 ];
 
+function digitsOnly(value) {
+  return String(value ?? '').replace(/[^0-9]/g, '');
+}
+
 function canAdvance(rule) {
   if (rule.offshoreOnly === true && procedureEl.value !== 'offshore') return false;
   if (rule.offshoreOnly === false && procedureEl.value === 'offshore') return false;
-  const value = String(rule.el.value ?? '').replace(/[^0-9]/g, '');
-  return value.length >= rule.minDigits;
+  return digitsOnly(rule.el.value).length >= rule.minDigits;
 }
 
 function focusNext(target) {
@@ -50,6 +50,9 @@ function focusNext(target) {
 function setupAutoAdvance() {
   autoAdvanceRules.forEach((rule) => {
     rule.el.addEventListener('input', () => {
+      if (rule.el === oatEl) {
+        oatEl.value = digitsOnly(oatEl.value).slice(0, 2);
+      }
       if (canAdvance(rule)) focusNext(rule.next);
     });
     rule.el.addEventListener('keydown', (event) => {
@@ -61,64 +64,16 @@ function setupAutoAdvance() {
   });
 }
 
-const chartDb = {
-  offshore: {
-    eaps_off: { mode: 'placeholder', note: 'Digitalização pendente' },
-    eaps_on: { mode: 'placeholder', note: 'Digitalização pendente' },
-    ibf: { mode: 'placeholder', note: 'Digitalização pendente' },
-    standard: { mode: 'placeholder', note: 'Digitalização pendente' }
-  },
-  clear: {
-    eaps_off: { mode: 'placeholder' },
-    eaps_on: { mode: 'placeholder' },
-    ibf: { mode: 'placeholder' },
-    standard: { mode: 'placeholder' }
-  },
-  confined: {
-    eaps_off: { mode: 'placeholder' },
-    eaps_on: { mode: 'placeholder' },
-    ibf: { mode: 'placeholder' },
-    standard: { mode: 'placeholder' }
-  }
-};
-
-
-function syncSegmentedUI(groupEl, value) {
-  groupEl.querySelectorAll('.seg-btn').forEach((btn) => {
-    btn.classList.toggle('active', btn.dataset.value === value);
-    btn.setAttribute('aria-selected', btn.dataset.value === value ? 'true' : 'false');
-  });
-}
-
-function setSegmentedValue(target, value) {
-  if (target === 'procedure') {
-    procedureEl.value = value;
-    syncSegmentedUI(procedureGroup, value);
-    toggleHeadwind();
-    if (value !== 'offshore') headwindEl.value = '';
-    return;
-  }
-  if (target === 'configuration') {
-    configurationEl.value = value;
-    syncSegmentedUI(configurationGroup, value);
-  }
-}
-
-function setupSegmentedControls() {
-  document.querySelectorAll('.seg-btn').forEach((btn) => {
-    btn.addEventListener('click', () => {
-      setSegmentedValue(btn.dataset.target, btn.dataset.value);
-    });
-  });
-}
-
 function toggleHeadwind() {
-  headwindWrap.classList.toggle('hidden', procedureEl.value !== 'offshore');
+  const offshore = procedureEl.value === 'offshore';
+  headwindWrap.classList.toggle('hidden', !offshore);
+  headwindEl.disabled = !offshore;
+  if (!offshore) headwindEl.value = '';
 }
 
 function loadDemo() {
-  setSegmentedValue('procedure', 'offshore');
-  setSegmentedValue('configuration', 'eaps_off');
+  procedureEl.value = 'offshore';
+  configurationEl.value = 'standard';
   paEl.value = '1200';
   oatEl.value = '28';
   weightEl.value = '6550';
@@ -205,6 +160,7 @@ function drawChart(data) {
     ctx.lineTo(gx + gw - 30, startY + 130);
     ctx.stroke();
     ctx.fillStyle = '#8ea0b7';
+    ctx.font = '14px sans-serif';
     ctx.fillText(`${temp}°C`, gx + gw - 56, startY + 122);
   });
 
@@ -252,6 +208,7 @@ function drawChart(data) {
   ctx.fill();
 
   ctx.fillStyle = '#b7c7db';
+  ctx.font = '14px sans-serif';
   ctx.fillText(`PA ${data.pa} ft`, gx + 10, y - 10);
   ctx.fillText(`OAT ${data.oat}°C`, gx + 10, y + 12);
   ctx.fillText(`MAX ${Math.round(data.maxWeight)} kg`, Math.min(maxX + 12, gx + gw - 120), Math.max(y - 12, gy + 18));
@@ -268,6 +225,9 @@ toggleChart.addEventListener('click', () => {
   toggleChart.textContent = chartPanel.classList.contains('hidden') ? 'Mostrar gráfico' : 'Ocultar gráfico';
   if (!chartPanel.classList.contains('hidden')) drawChart();
 });
+
+procedureEl.addEventListener('change', toggleHeadwind);
+configurationEl.addEventListener('change', () => {});
 
 window.addEventListener('beforeinstallprompt', (event) => {
   event.preventDefault();
@@ -287,8 +247,8 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
 }
 
-setupSegmentedControls();
-setSegmentedValue('procedure', 'offshore');
-setSegmentedValue('configuration', 'standard');
+procedureEl.value = 'offshore';
+configurationEl.value = 'standard';
+toggleHeadwind();
 setupAutoAdvance();
 drawChart();
