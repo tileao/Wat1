@@ -2,6 +2,8 @@ let deferredPrompt = null;
 const installBtn = document.getElementById('installBtn');
 const procedureEl = document.getElementById('procedure');
 const configurationEl = document.getElementById('configuration');
+const procedureGroup = document.getElementById('procedureGroup');
+const configurationGroup = document.getElementById('configurationGroup');
 const paEl = document.getElementById('pressureAltitude');
 const oatEl = document.getElementById('oat');
 const weightEl = document.getElementById('actualWeight');
@@ -22,7 +24,7 @@ const marginEl = document.getElementById('margin');
 
 const autoAdvanceRules = [
   { el: paEl, next: oatEl, minDigits: 3 },
-  { el: oatEl, next: weightEl, minDigits: 1 },
+  { el: oatEl, next: weightEl, minDigits: 2 },
   { el: weightEl, next: headwindEl, minDigits: 4, offshoreOnly: true },
   { el: weightEl, next: runBtn, minDigits: 4, offshoreOnly: false },
   { el: headwindEl, next: runBtn, minDigits: 1 }
@@ -31,7 +33,7 @@ const autoAdvanceRules = [
 function canAdvance(rule) {
   if (rule.offshoreOnly === true && procedureEl.value !== 'offshore') return false;
   if (rule.offshoreOnly === false && procedureEl.value === 'offshore') return false;
-  const value = String(rule.el.value ?? '').replace(/[^0-9-]/g, '');
+  const value = String(rule.el.value ?? '').replace(/[^0-9]/g, '');
   return value.length >= rule.minDigits;
 }
 
@@ -80,13 +82,43 @@ const chartDb = {
   }
 };
 
+
+function syncSegmentedUI(groupEl, value) {
+  groupEl.querySelectorAll('.seg-btn').forEach((btn) => {
+    btn.classList.toggle('active', btn.dataset.value === value);
+    btn.setAttribute('aria-selected', btn.dataset.value === value ? 'true' : 'false');
+  });
+}
+
+function setSegmentedValue(target, value) {
+  if (target === 'procedure') {
+    procedureEl.value = value;
+    syncSegmentedUI(procedureGroup, value);
+    toggleHeadwind();
+    if (value !== 'offshore') headwindEl.value = '';
+    return;
+  }
+  if (target === 'configuration') {
+    configurationEl.value = value;
+    syncSegmentedUI(configurationGroup, value);
+  }
+}
+
+function setupSegmentedControls() {
+  document.querySelectorAll('.seg-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      setSegmentedValue(btn.dataset.target, btn.dataset.value);
+    });
+  });
+}
+
 function toggleHeadwind() {
   headwindWrap.classList.toggle('hidden', procedureEl.value !== 'offshore');
 }
 
 function loadDemo() {
-  procedureEl.value = 'offshore';
-  configurationEl.value = 'eaps_off';
+  setSegmentedValue('procedure', 'offshore');
+  setSegmentedValue('configuration', 'eaps_off');
   paEl.value = '1200';
   oatEl.value = '28';
   weightEl.value = '6550';
@@ -229,10 +261,6 @@ function drawChart(data) {
   }
 }
 
-procedureEl.addEventListener('change', () => {
-  toggleHeadwind();
-  if (procedureEl.value !== 'offshore') headwindEl.value = '';
-});
 runBtn.addEventListener('click', runCalculation);
 demoBtn.addEventListener('click', loadDemo);
 toggleChart.addEventListener('click', () => {
@@ -259,6 +287,8 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
 }
 
-toggleHeadwind();
+setupSegmentedControls();
+setSegmentedValue('procedure', 'offshore');
+setSegmentedValue('configuration', 'standard');
 setupAutoAdvance();
 drawChart();

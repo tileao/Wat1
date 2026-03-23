@@ -26,24 +26,26 @@
       </div>
 
       <div class="grid">
-        <label>
+        <div class="control-block">
           <span>Procedure</span>
-          <select id="procedure">
-            <option value="offshore" selected>Offshore Helideck</option>
-            <option value="clear">Clear Area / CAT B</option>
-            <option value="confined">Confined Area</option>
-          </select>
-        </label>
+          <div id="procedureGroup" class="segmented" role="tablist" aria-label="Procedure">
+            <button type="button" class="seg-btn active" data-target="procedure" data-value="offshore">Offshore</button>
+            <button type="button" class="seg-btn" data-target="procedure" data-value="clear">Clear / CAT B</button>
+            <button type="button" class="seg-btn" data-target="procedure" data-value="confined">Confined</button>
+          </div>
+          <input id="procedure" type="hidden" value="offshore">
+        </div>
 
-        <label>
+        <div class="control-block">
           <span>Configuration</span>
-          <select id="configuration">
-            <option value="standard" selected>Standard</option>
-            <option value="eaps_off">EAPS OFF</option>
-            <option value="eaps_on">EAPS ON</option>
-            <option value="ibf">IBF Installed</option>
-          </select>
-        </label>
+          <div id="configurationGroup" class="segmented" role="tablist" aria-label="Configuration">
+            <button type="button" class="seg-btn active" data-target="configuration" data-value="standard">Standard</button>
+            <button type="button" class="seg-btn" data-target="configuration" data-value="eaps_off">EAPS OFF</button>
+            <button type="button" class="seg-btn" data-target="configuration" data-value="eaps_on">EAPS ON</button>
+            <button type="button" class="seg-btn" data-target="configuration" data-value="ibf">IBF</button>
+          </div>
+          <input id="configuration" type="hidden" value="standard">
+        </div>
 
         <label class="field-half">
           <span>Pressure Altitude (ft)</span>
