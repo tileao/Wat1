@@ -476,8 +476,9 @@ function renderCompositeCanvas(result = currentResult) {
   const baseHeight = useFullPage ? chartExportPageImage.naturalHeight : chartBaseImage.naturalHeight;
 
   const exportCanvas = document.createElement('canvas');
+  const footerExtra = useFullPage ? 190 : 0;
   exportCanvas.width = baseWidth;
-  exportCanvas.height = baseHeight;
+  exportCanvas.height = baseHeight + footerExtra;
   const ex = exportCanvas.getContext('2d');
   ex.fillStyle = '#ffffff';
   ex.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
@@ -486,6 +487,11 @@ function renderCompositeCanvas(result = currentResult) {
     ex.drawImage(chartExportPageImage, 0, 0);
   } else {
     ex.drawImage(chartBaseImage, 0, 0);
+  }
+
+  if (useFullPage && footerExtra > 0) {
+    ex.fillStyle = '#ffffff';
+    ex.fillRect(0, baseHeight, baseWidth, footerExtra);
   }
 
   const clipPlacement = useFullPage
@@ -603,7 +609,7 @@ function renderCompositeCanvas(result = currentResult) {
     ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg | Margin ${result.margin >= 0 ? '+' : ''}${Math.round(result.margin)} kg`, boxX + 22, boxY + 136);
     ex.restore();
 
-    const legendY = useFullPage ? 1530 : baseHeight - 100;
+    const legendY = useFullPage ? baseHeight + 36 : baseHeight - 100;
     drawLegendRow(ex, 80, legendY, [
       { color: '#ffffff', label: 'Max weight interpolado' },
       { color: '#52a8ff', label: 'Peso atual' },
@@ -614,9 +620,9 @@ function renderCompositeCanvas(result = currentResult) {
     ex.save();
     ex.fillStyle = '#223247';
     ex.font = '18px Inter, system-ui, sans-serif';
-    ex.fillText('Fonte: Leonardo AW139 Rotorcraft Flight Manual (RFM), Issue 2, Rev. 32.', 80, legendY + 42);
-    ex.fillText('Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.', 80, legendY + 68);
-    ex.fillText('Sempre consulte as publicações oficiais e atualizadas. Esta ferramenta não as substitui.', 80, legendY + 94);
+    ex.fillText('Fonte: Leonardo AW139 Rotorcraft Flight Manual (RFM), Issue 2, Rev. 32.', 80, legendY + 50);
+    ex.fillText('Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.', 80, legendY + 78);
+    ex.fillText('Sempre consulte as publicações oficiais e atualizadas. Esta ferramenta não as substitui.', 80, legendY + 106);
     ex.restore();
   }
 
