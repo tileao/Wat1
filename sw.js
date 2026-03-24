@@ -1,11 +1,13 @@
-const CACHE_NAME = 'wac6800-v0.1.0';
+const CACHE_NAME = 'wac6800-v0.2.0';
 const APP_ASSETS = [
   './',
   './index.html',
   './styles.css',
   './app.js',
   './manifest.webmanifest',
-  './data/chart-schema.json'
+  './data/chart-schema.json',
+  './assets/offshore_standard_chart_clip.png',
+  './docs/WAC charts 6800.pdf'
 ];
 
 self.addEventListener('install', (event) => {

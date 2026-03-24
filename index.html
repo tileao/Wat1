@@ -101,17 +101,23 @@
     <section class="card">
       <div class="card-title-row">
         <h2>Visual interpolation</h2>
-        <button id="toggleChart" class="ghost small">Mostrar gráfico</button>
+        <div class="toolbar-row">
+          <button id="toggleChart" class="ghost small">Mostrar gráfico</button>
+          <button id="exportPdfBtn" class="ghost small">Exportar PDF</button>
+        </div>
       </div>
       <div id="chartPanel" class="chart-panel hidden">
-        <canvas id="chartCanvas" width="900" height="1137" aria-label="Visual interpolation chart"></canvas>
+        <div class="chart-stage">
+          <img id="chartBaseImage" src="assets/offshore_standard_chart_clip.png" alt="Recorte do gráfico Offshore Standard">
+          <canvas id="chartCanvas" width="900" height="1137" aria-label="Visual interpolation chart"></canvas>
+        </div>
         <div class="legend">
           <span><i class="dot white"></i> Max weight interpolado</span>
           <span><i class="dot blue"></i> Peso atual</span>
           <span><i class="dot green"></i> Dentro</span>
           <span><i class="dot red"></i> Fora</span>
         </div>
-        <p class="hint">Overlay direto sobre o recorte do PDF: altitude, curvas de temperatura, peso atual, ponto sem vento e resultado final com headwind.</p>
+        <p class="hint">Overlay direto sobre o recorte real do PDF: altitude, curvas de temperatura, peso atual, ponto sem vento e resultado final com headwind.</p>
       </div>
     </section>
 
