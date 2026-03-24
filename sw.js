@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wac6800-standard-fullpage-generatepdf-v1';
+const CACHE_NAME = 'wac6800-standard-fullpage-generate-pdf-fixed-v1';
 const APP_ASSETS = [
   './',
   './index.html',
@@ -6,7 +6,8 @@ const APP_ASSETS = [
   './app.js',
   './manifest.webmanifest',
   './data/chart-schema.json',
-    './docs/WAC charts 6800.pdf',
+  './assets/offshore_standard_chart_clip.png',
+  './docs/WAC charts 6800.pdf',
   './docs/page-07.png'
 ];
 

@@ -15,10 +15,11 @@ const exportPdfBtn = document.getElementById('exportPdfBtn');
 const chartPanel = document.getElementById('chartPanel');
 const chartCanvas = document.getElementById('chartCanvas');
 const chartBaseImage = document.getElementById('chartBaseImage');
+const chartClipImage = new Image();
+chartClipImage.src = 'assets/offshore_standard_chart_clip.png';
 const chartExportPageImage = new Image();
 chartExportPageImage.src = 'docs/page-07.png';
-const FULL_PAGE_WIDTH = 1323;
-const FULL_PAGE_HEIGHT = 1872;
+const EXPORT_PAGE_PLACEMENT = { scale: 0.740971986, offsetX: 273.206409, offsetY: 594.946143 };
 const ctx = chartCanvas.getContext('2d');
 let currentResult = null;
 const statusCard = document.getElementById('statusCard');
@@ -281,159 +282,40 @@ function setCanvasSizeToImage() {
 }
 
 function drawBackgroundImage() {
-  return !!(chartBaseImage.complete && chartBaseImage.naturalWidth);
+  return !!(chartExportPageImage.complete && chartExportPageImage.naturalWidth);
 }
 
 function ensureCanvasReady() {
   if (!drawBackgroundImage()) return false;
-  setCanvasSizeToImage();
+  const rect = chartCanvas.getBoundingClientRect();
+  const aspect = (chartExportPageImage.naturalWidth || 900) / (chartExportPageImage.naturalHeight || 1137);
+  const displayWidth = Math.max(1, Math.round(rect.width || chartExportPageImage.naturalWidth || 900));
+  const displayHeight = Math.max(1, Math.round(displayWidth / aspect));
+  const dpr = Math.max(1, window.devicePixelRatio || 1);
+  chartCanvas.width = Math.round(displayWidth * dpr);
+  chartCanvas.height = Math.round(displayHeight * dpr);
+  chartCanvas.style.height = `${displayHeight}px`;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   return true;
-}
-
-function mapPdfToCanvasX(x) {
-  return (x / FULL_PAGE_WIDTH) * chartCanvas.getBoundingClientRect().width;
-}
-function mapPdfToCanvasY(y) {
-  return (y / FULL_PAGE_HEIGHT) * chartCanvas.getBoundingClientRect().height;
-}
-
-function drawPdfPolyline(points, color, width = 2, dashed = false) {
-  if (!points?.length) return;
-  ctx.save();
-  ctx.beginPath();
-  ctx.setLineDash(dashed ? [10, 8] : []);
-  ctx.strokeStyle = color;
-  ctx.lineWidth = width;
-  points.forEach((point, index) => {
-    const x = mapPdfToCanvasX(point.x);
-    const y = mapPdfToCanvasY(point.y);
-    if (index === 0) ctx.moveTo(x, y);
-    else ctx.lineTo(x, y);
-  });
-  ctx.stroke();
-  ctx.restore();
-}
-
-function drawMarker(xPdf, yPdf, color, radius = 7) {
-  const x = mapPdfToCanvasX(xPdf);
-  const y = mapPdfToCanvasY(yPdf);
-  ctx.save();
-  ctx.fillStyle = color;
-  ctx.strokeStyle = '#081019';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.arc(x, y, radius, 0, Math.PI * 2);
-  ctx.fill();
-  ctx.stroke();
-  ctx.restore();
 }
 
 function drawOverlay(result) {
   if (!ensureCanvasReady()) return;
   const rect = chartCanvas.getBoundingClientRect();
   ctx.clearRect(0, 0, rect.width, rect.height);
-  const hasImage = drawBackgroundImage();
-
-  if (!result || result.error) {
-    if (!hasImage) {
-      ctx.fillStyle = '#0b1017';
-      ctx.fillRect(0, 0, rect.width, rect.height);
-    }
-    ctx.fillStyle = '#e8eef7';
-    ctx.font = '700 28px Inter, system-ui, sans-serif';
-    ctx.fillText('Offshore Standard - página completa do RFM', 32, 48);
-    ctx.fillStyle = '#8ea0b7';
-    ctx.font = '20px Inter, system-ui, sans-serif';
-    ctx.fillText('O cálculo exato aparece aqui quando você rodar o chart Standard.', 32, 84);
+  const preview = renderAnnotatedCanvas(result, { includeFooter: false, includeSummaryBox: false });
+  if (preview) {
+    ctx.drawImage(preview, 0, 0, rect.width, rect.height);
     return;
   }
-
-  const withinColor = result.within ? '#14b86a' : '#df4f5f';
-  const blue = '#52a8ff';
-  const amber = '#f3b447';
-
-  // reference overlays
-  drawPdfPolyline(toPoints(OFFSHORE_STANDARD_EXACT.limits.maxOat), '#5b6bd4', 2, true);
-  drawPdfPolyline(toPoints(OFFSHORE_STANDARD_EXACT.limits.hdLimit), '#5b6bd4', 2, true);
-
-  // highlight bracketing temperature curves
-  drawPdfPolyline(result.noWind.lowerCurve, amber, 3);
-  if (result.noWind.upperTemp !== result.noWind.lowerTemp) {
-    drawPdfPolyline(result.noWind.upperCurve, amber, 3);
-  }
-
-  const paY = result.noWind.paY;
-  const noWindX = result.noWind.noWindX;
-  const actualX = kgToX(result.actualWeightKg);
-  const maxX = kgToX(result.maxWeight);
-  const hwY = result.hw.hwY;
-
-  // altitude line on main chart
-  ctx.save();
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2.5;
-  ctx.setLineDash([12, 10]);
-  ctx.beginPath();
-  ctx.moveTo(mapPdfToCanvasX(81.379), mapPdfToCanvasY(paY));
-  ctx.lineTo(mapPdfToCanvasX(271.707), mapPdfToCanvasY(paY));
-  ctx.stroke();
-
-  // actual weight vertical
-  ctx.setLineDash([]);
-  ctx.strokeStyle = blue;
-  ctx.beginPath();
-  ctx.moveTo(mapPdfToCanvasX(actualX), mapPdfToCanvasY(388.388));
-  ctx.lineTo(mapPdfToCanvasX(actualX), mapPdfToCanvasY(488.12));
-  ctx.stroke();
-
-  // max weight vertical
-  ctx.strokeStyle = withinColor;
-  ctx.beginPath();
-  ctx.moveTo(mapPdfToCanvasX(maxX), mapPdfToCanvasY(388.388));
-  ctx.lineTo(mapPdfToCanvasX(maxX), mapPdfToCanvasY(488.12));
-  ctx.stroke();
-
-  // headwind line
-  ctx.setLineDash([10, 8]);
-  ctx.strokeStyle = '#ffffff';
-  ctx.beginPath();
-  ctx.moveTo(mapPdfToCanvasX(81.379), mapPdfToCanvasY(hwY));
-  ctx.lineTo(mapPdfToCanvasX(271.707), mapPdfToCanvasY(hwY));
-  ctx.stroke();
-  ctx.restore();
-
-  drawMarker(noWindX, paY, '#ffffff', 7);
-  drawMarker(actualX, paY, blue, 6);
-  drawMarker(maxX, hwY, withinColor, 7);
-
-  // top callout
-  ctx.save();
-  ctx.fillStyle = 'rgba(11,15,20,0.82)';
-  ctx.strokeStyle = 'rgba(255,255,255,0.08)';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  roundRect(ctx, 18, 18, rect.width - 36, 96, 16);
-  ctx.fill();
-  ctx.stroke();
-
+  ctx.fillStyle = '#0b1017';
+  ctx.fillRect(0, 0, rect.width, rect.height);
   ctx.fillStyle = '#e8eef7';
-  ctx.font = '700 24px Inter, system-ui, sans-serif';
-  ctx.fillText(`Offshore Standard - página completa do RFM`, 32, 50);
-  ctx.font = '18px Inter, system-ui, sans-serif';
-  ctx.fillStyle = '#c9d6e8';
-  ctx.fillText(`PA ${
-    Math.round(result.paFt)
-  } ft | OAT ${
-    result.oat
-  }°C | HW ${
-    Math.round(result.headwindKt)
-  } kt`, 32, 80);
-  ctx.fillText(`No wind ${
-    Math.round(result.noWind.noWindKg)
-  } kg -> Final ${
-    Math.round(result.maxWeight)
-  } kg`, 32, 104);
-  ctx.restore();
+  ctx.font = '700 28px Inter, system-ui, sans-serif';
+  ctx.fillText('Offshore Standard - página completa do RFM', 32, 48);
+  ctx.fillStyle = '#8ea0b7';
+  ctx.font = '20px Inter, system-ui, sans-serif';
+  ctx.fillText('Abra a visualização novamente quando a página do RFM estiver carregada.', 32, 84);
 }
 
 function roundRect(ctx, x, y, width, height, radius) {
@@ -466,13 +348,14 @@ function drawLegendRow(targetCtx, startX, startY, items) {
   targetCtx.restore();
 }
 
-
-function renderCompositeCanvas(result = currentResult) {
+function renderAnnotatedCanvas(result = currentResult, options = {}) {
   if (!chartExportPageImage.complete || !chartExportPageImage.naturalWidth) return null;
 
+  const includeFooter = options.includeFooter ?? true;
+  const includeSummaryBox = options.includeSummaryBox ?? includeFooter;
   const baseWidth = chartExportPageImage.naturalWidth;
   const baseHeight = chartExportPageImage.naturalHeight;
-  const footerExtra = 190;
+  const footerExtra = includeFooter ? 190 : 0;
 
   const exportCanvas = document.createElement('canvas');
   exportCanvas.width = baseWidth;
@@ -481,11 +364,20 @@ function renderCompositeCanvas(result = currentResult) {
   ex.fillStyle = '#ffffff';
   ex.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
   ex.drawImage(chartExportPageImage, 0, 0);
-  ex.fillStyle = '#ffffff';
-  ex.fillRect(0, baseHeight, baseWidth, footerExtra);
+  if (includeFooter) {
+    ex.fillStyle = '#ffffff';
+    ex.fillRect(0, baseHeight, baseWidth, footerExtra);
+  }
 
-  const pxX = (x) => x;
-  const pxY = (y) => y;
+  const clipPlacement = {
+    x: EXPORT_PAGE_PLACEMENT.offsetX,
+    y: EXPORT_PAGE_PLACEMENT.offsetY,
+    width: chartClipImage.naturalWidth * EXPORT_PAGE_PLACEMENT.scale,
+    height: chartClipImage.naturalHeight * EXPORT_PAGE_PLACEMENT.scale
+  };
+
+  const pxX = (x) => clipPlacement.x + ((x - 35) / (320 - 35)) * clipPlacement.width;
+  const pxY = (y) => clipPlacement.y + ((y - 145) / (505 - 145)) * clipPlacement.height;
 
   const drawPolyline = (points, color, lineWidth = 2, dashed = false) => {
     if (!points?.length) return;
@@ -504,7 +396,7 @@ function renderCompositeCanvas(result = currentResult) {
     ex.restore();
   };
 
-  const marker = (xPdf, yPdf, color, radius = 6) => {
+  const marker = (xPdf, yPdf, color, radius = 7) => {
     const x = pxX(xPdf);
     const y = pxY(yPdf);
     ex.save();
@@ -563,53 +455,63 @@ function renderCompositeCanvas(result = currentResult) {
     ex.stroke();
     ex.restore();
 
-    marker(noWindX, paY, '#ffffff', 6.5);
-    marker(actualX, paY, blue, 6);
-    marker(maxX, hwY, withinColor, 6.5);
+    const dotRadius = includeFooter ? 5.5 : 4.5;
+    marker(noWindX, paY, '#ffffff', dotRadius + 1);
+    marker(actualX, paY, blue, dotRadius);
+    marker(maxX, hwY, withinColor, dotRadius + 1);
 
-    const boxX = 56;
-    const boxY = 56;
-    const boxW = 940;
-    const boxH = 168;
-    ex.save();
-    ex.fillStyle = 'rgba(255,255,255,0.88)';
-    ex.strokeStyle = 'rgba(8,16,25,0.16)';
-    ex.lineWidth = 1;
-    ex.beginPath();
-    roundRect(ex, boxX, boxY, boxW, boxH, 18);
-    ex.fill();
-    ex.stroke();
-    ex.fillStyle = '#081019';
-    ex.font = '700 28px Inter, system-ui, sans-serif';
-    ex.fillText('WAC 6800 - interpolação documentada sobre a página do RFM', boxX + 22, boxY + 40);
-    ex.font = '20px Inter, system-ui, sans-serif';
-    ex.fillStyle = '#223247';
-    ex.fillText(`Procedure: Offshore Helideck | Configuration: Standard`, boxX + 22, boxY + 76);
-    ex.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | WT ${Math.round(result.actualWeightKg)} kg | HW ${Math.round(result.headwindKt)} kt`, boxX + 22, boxY + 106);
-    ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg | Margin ${result.margin >= 0 ? '+' : ''}${Math.round(result.margin)} kg`, boxX + 22, boxY + 136);
-    ex.restore();
+    if (includeSummaryBox) {
+      const boxX = 56;
+      const boxY = 56;
+      const boxW = 940;
+      const boxH = 168;
+      ex.save();
+      ex.fillStyle = 'rgba(255,255,255,0.88)';
+      ex.strokeStyle = 'rgba(8,16,25,0.16)';
+      ex.lineWidth = 1;
+      ex.beginPath();
+      roundRect(ex, boxX, boxY, boxW, boxH, 18);
+      ex.fill();
+      ex.stroke();
+      ex.fillStyle = '#081019';
+      ex.font = '700 28px Inter, system-ui, sans-serif';
+      ex.fillText('WAC 6800 - interpolação documentada sobre a página do RFM', boxX + 22, boxY + 40);
+      ex.font = '20px Inter, system-ui, sans-serif';
+      ex.fillStyle = '#223247';
+      ex.fillText(`Procedure: Offshore Helideck | Configuration: Standard`, boxX + 22, boxY + 76);
+      ex.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | WT ${Math.round(result.actualWeightKg)} kg | HW ${Math.round(result.headwindKt)} kt`, boxX + 22, boxY + 106);
+      ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg | Margin ${result.margin >= 0 ? '+' : ''}${Math.round(result.margin)} kg`, boxX + 22, boxY + 136);
+      ex.restore();
+    }
 
-    const legendY = baseHeight + 36;
-    drawLegendRow(ex, 80, legendY, [
-      { color: '#ffffff', label: 'Max weight interpolado' },
-      { color: '#52a8ff', label: 'Peso atual' },
-      { color: '#14b86a', label: 'Dentro' },
-      { color: '#df4f5f', label: 'Fora' }
-    ]);
+    if (includeFooter) {
+      const legendY = baseHeight + 36;
+      drawLegendRow(ex, 80, legendY, [
+        { color: '#ffffff', label: 'Max weight interpolado' },
+        { color: '#52a8ff', label: 'Peso atual' },
+        { color: '#14b86a', label: 'Dentro' },
+        { color: '#df4f5f', label: 'Fora' }
+      ]);
 
-    ex.save();
-    ex.fillStyle = '#223247';
-    ex.font = '18px Inter, system-ui, sans-serif';
-    ex.fillText('Fonte: Leonardo AW139 Rotorcraft Flight Manual (RFM), Issue 2, Rev. 32.', 80, legendY + 50);
-    ex.fillText('Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.', 80, legendY + 78);
-    ex.fillText('Sempre consulte as publicações oficiais e atualizadas. Esta ferramenta não as substitui.', 80, legendY + 106);
-    ex.restore();
+      ex.save();
+      ex.fillStyle = '#223247';
+      ex.font = '18px Inter, system-ui, sans-serif';
+      ex.fillText('Fonte: Leonardo AW139 Rotorcraft Flight Manual (RFM), Issue 2, Rev. 32.', 80, legendY + 50);
+      ex.fillText('Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.', 80, legendY + 78);
+      ex.fillText('Sempre consulte as publicações oficiais e atualizadas. Esta ferramenta não as substitui.', 80, legendY + 106);
+      ex.restore();
+    }
   }
 
   return exportCanvas;
 }
 
+function renderCompositeCanvas(result = currentResult) {
+  return renderAnnotatedCanvas(result, { includeFooter: true, includeSummaryBox: true });
+}
+
 function openPdfInNewTabFromCanvas(canvas) {
+  const pdfWindow = window.open('', '_blank');
   const jpegData = canvas.toDataURL('image/jpeg', 0.92);
   const base64 = jpegData.split(',')[1];
   const imageBytes = atob(base64);
@@ -670,7 +572,15 @@ ${xrefStart}
 
   const blob = new Blob(pdfParts, { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
-  window.open(url, '_blank', 'noopener,noreferrer');
+  if (pdfWindow) {
+    pdfWindow.location = url;
+  } else {
+    const a = document.createElement('a');
+    a.href = url;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    a.click();
+  }
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
@@ -688,6 +598,7 @@ function exportInterpolatedPdf() {
   }
   openPdfInNewTabFromCanvas(canvas);
 }
+
 function runCalculation() {
   const procedure = procedureEl.value;
   const configuration = configurationEl.value;
