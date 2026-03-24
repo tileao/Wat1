@@ -17,7 +17,8 @@ const chartCanvas = document.getElementById('chartCanvas');
 const chartBaseImage = document.getElementById('chartBaseImage');
 const chartExportPageImage = new Image();
 chartExportPageImage.src = 'docs/page-07.png';
-const EXPORT_PAGE_PLACEMENT = { scale: 0.740971986, offsetX: 273.206409, offsetY: 594.946143 };
+const FULL_PAGE_WIDTH = 1323;
+const FULL_PAGE_HEIGHT = 1872;
 const ctx = chartCanvas.getContext('2d');
 let currentResult = null;
 const statusCard = document.getElementById('statusCard');
@@ -290,12 +291,10 @@ function ensureCanvasReady() {
 }
 
 function mapPdfToCanvasX(x) {
-  const clip = { x0: 35, y0: 145, x1: 320, y1: 505 };
-  return ((x - clip.x0) / (clip.x1 - clip.x0)) * chartCanvas.getBoundingClientRect().width;
+  return (x / FULL_PAGE_WIDTH) * chartCanvas.getBoundingClientRect().width;
 }
 function mapPdfToCanvasY(y) {
-  const clip = { x0: 35, y0: 145, x1: 320, y1: 505 };
-  return ((y - clip.y0) / (clip.y1 - clip.y0)) * chartCanvas.getBoundingClientRect().height;
+  return (y / FULL_PAGE_HEIGHT) * chartCanvas.getBoundingClientRect().height;
 }
 
 function drawPdfPolyline(points, color, width = 2, dashed = false) {
@@ -342,7 +341,7 @@ function drawOverlay(result) {
     }
     ctx.fillStyle = '#e8eef7';
     ctx.font = '700 28px Inter, system-ui, sans-serif';
-    ctx.fillText('Offshore Standard - overlay PDF', 32, 48);
+    ctx.fillText('Offshore Standard - página completa do RFM', 32, 48);
     ctx.fillStyle = '#8ea0b7';
     ctx.font = '20px Inter, system-ui, sans-serif';
     ctx.fillText('O cálculo exato aparece aqui quando você rodar o chart Standard.', 32, 84);
@@ -419,7 +418,7 @@ function drawOverlay(result) {
 
   ctx.fillStyle = '#e8eef7';
   ctx.font = '700 24px Inter, system-ui, sans-serif';
-  ctx.fillText(`Offshore Standard - extração vetorial do PDF`, 32, 50);
+  ctx.fillText(`Offshore Standard - página completa do RFM`, 32, 50);
   ctx.font = '18px Inter, system-ui, sans-serif';
   ctx.fillStyle = '#c9d6e8';
   ctx.fillText(`PA ${
@@ -467,44 +466,26 @@ function drawLegendRow(targetCtx, startX, startY, items) {
   targetCtx.restore();
 }
 
-function renderCompositeCanvas(result = currentResult) {
-  if (!chartBaseImage.complete || !chartBaseImage.naturalWidth) return null;
 
-  const pageImageReady = chartExportPageImage.complete && chartExportPageImage.naturalWidth;
-  const useFullPage = pageImageReady;
-  const baseWidth = useFullPage ? chartExportPageImage.naturalWidth : chartBaseImage.naturalWidth;
-  const baseHeight = useFullPage ? chartExportPageImage.naturalHeight : chartBaseImage.naturalHeight;
+function renderCompositeCanvas(result = currentResult) {
+  if (!chartExportPageImage.complete || !chartExportPageImage.naturalWidth) return null;
+
+  const baseWidth = chartExportPageImage.naturalWidth;
+  const baseHeight = chartExportPageImage.naturalHeight;
+  const footerExtra = 190;
 
   const exportCanvas = document.createElement('canvas');
-  const footerExtra = useFullPage ? 190 : 0;
   exportCanvas.width = baseWidth;
   exportCanvas.height = baseHeight + footerExtra;
   const ex = exportCanvas.getContext('2d');
   ex.fillStyle = '#ffffff';
   ex.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
+  ex.drawImage(chartExportPageImage, 0, 0);
+  ex.fillStyle = '#ffffff';
+  ex.fillRect(0, baseHeight, baseWidth, footerExtra);
 
-  if (useFullPage) {
-    ex.drawImage(chartExportPageImage, 0, 0);
-  } else {
-    ex.drawImage(chartBaseImage, 0, 0);
-  }
-
-  if (useFullPage && footerExtra > 0) {
-    ex.fillStyle = '#ffffff';
-    ex.fillRect(0, baseHeight, baseWidth, footerExtra);
-  }
-
-  const clipPlacement = useFullPage
-    ? {
-        x: EXPORT_PAGE_PLACEMENT.offsetX,
-        y: EXPORT_PAGE_PLACEMENT.offsetY,
-        width: chartBaseImage.naturalWidth * EXPORT_PAGE_PLACEMENT.scale,
-        height: chartBaseImage.naturalHeight * EXPORT_PAGE_PLACEMENT.scale
-      }
-    : { x: 0, y: 0, width: chartBaseImage.naturalWidth, height: chartBaseImage.naturalHeight };
-
-  const pxX = (x) => clipPlacement.x + ((x - 35) / (320 - 35)) * clipPlacement.width;
-  const pxY = (y) => clipPlacement.y + ((y - 145) / (505 - 145)) * clipPlacement.height;
+  const pxX = (x) => x;
+  const pxY = (y) => y;
 
   const drawPolyline = (points, color, lineWidth = 2, dashed = false) => {
     if (!points?.length) return;
@@ -523,7 +504,7 @@ function renderCompositeCanvas(result = currentResult) {
     ex.restore();
   };
 
-  const marker = (xPdf, yPdf, color, radius = 7) => {
+  const marker = (xPdf, yPdf, color, radius = 6) => {
     const x = pxX(xPdf);
     const y = pxY(yPdf);
     ex.save();
@@ -582,15 +563,14 @@ function renderCompositeCanvas(result = currentResult) {
     ex.stroke();
     ex.restore();
 
-    const dotRadius = useFullPage ? 5.5 : 7;
-    marker(noWindX, paY, '#ffffff', dotRadius + 1);
-    marker(actualX, paY, blue, dotRadius);
-    marker(maxX, hwY, withinColor, dotRadius + 1);
+    marker(noWindX, paY, '#ffffff', 6.5);
+    marker(actualX, paY, blue, 6);
+    marker(maxX, hwY, withinColor, 6.5);
 
     const boxX = 56;
     const boxY = 56;
-    const boxW = useFullPage ? 940 : baseWidth - 36;
-    const boxH = useFullPage ? 168 : 96;
+    const boxW = 940;
+    const boxH = 168;
     ex.save();
     ex.fillStyle = 'rgba(255,255,255,0.88)';
     ex.strokeStyle = 'rgba(8,16,25,0.16)';
@@ -600,16 +580,16 @@ function renderCompositeCanvas(result = currentResult) {
     ex.fill();
     ex.stroke();
     ex.fillStyle = '#081019';
-    ex.font = useFullPage ? '700 28px Inter, system-ui, sans-serif' : '700 24px Inter, system-ui, sans-serif';
+    ex.font = '700 28px Inter, system-ui, sans-serif';
     ex.fillText('WAC 6800 - interpolação documentada sobre a página do RFM', boxX + 22, boxY + 40);
-    ex.font = useFullPage ? '20px Inter, system-ui, sans-serif' : '18px Inter, system-ui, sans-serif';
+    ex.font = '20px Inter, system-ui, sans-serif';
     ex.fillStyle = '#223247';
     ex.fillText(`Procedure: Offshore Helideck | Configuration: Standard`, boxX + 22, boxY + 76);
     ex.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | WT ${Math.round(result.actualWeightKg)} kg | HW ${Math.round(result.headwindKt)} kt`, boxX + 22, boxY + 106);
     ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg | Margin ${result.margin >= 0 ? '+' : ''}${Math.round(result.margin)} kg`, boxX + 22, boxY + 136);
     ex.restore();
 
-    const legendY = useFullPage ? baseHeight + 36 : baseHeight - 100;
+    const legendY = baseHeight + 36;
     drawLegendRow(ex, 80, legendY, [
       { color: '#ffffff', label: 'Max weight interpolado' },
       { color: '#52a8ff', label: 'Peso atual' },
@@ -629,7 +609,7 @@ function renderCompositeCanvas(result = currentResult) {
   return exportCanvas;
 }
 
-function downloadPdfFromCanvas(canvas, filename) {
+function openPdfInNewTabFromCanvas(canvas) {
   const jpegData = canvas.toDataURL('image/jpeg', 0.92);
   const base64 = jpegData.split(',')[1];
   const imageBytes = atob(base64);
@@ -643,41 +623,70 @@ function downloadPdfFromCanvas(canvas, filename) {
   const offset = () => pdfParts.reduce((n, part) => n + (typeof part === 'string' ? new TextEncoder().encode(part).length : part.length), 0);
   const bin = Uint8Array.from(imageBytes, c => c.charCodeAt(0));
 
-  push(`%PDF-1.4\n`);
-  offsets.push(offset()); push(`1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n`);
-  offsets.push(offset()); push(`2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n`);
-  offsets.push(offset()); push(`3 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth.toFixed(2)} ${pageHeight.toFixed(2)}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n`);
-  offsets.push(offset()); push(`4 0 obj\n<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgLen} >>\nstream\n`); push(bin); push(`\nendstream\nendobj\n`);
-  const content = `q\n${pageWidth.toFixed(2)} 0 0 ${pageHeight.toFixed(2)} 0 0 cm\n/Im0 Do\nQ\n`;
-  offsets.push(offset()); push(`5 0 obj\n<< /Length ${content.length} >>\nstream\n${content}endstream\nendobj\n`);
+  push(`%PDF-1.4
+`);
+  offsets.push(offset()); push(`1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+`);
+  offsets.push(offset()); push(`2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+`);
+  offsets.push(offset()); push(`3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth.toFixed(2)} ${pageHeight.toFixed(2)}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>
+endobj
+`);
+  offsets.push(offset()); push(`4 0 obj
+<< /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgLen} >>
+stream
+`); push(bin); push(`
+endstream
+endobj
+`);
+  const content = `q
+${pageWidth.toFixed(2)} 0 0 ${pageHeight.toFixed(2)} 0 0 cm
+/Im0 Do
+Q
+`;
+  offsets.push(offset()); push(`5 0 obj
+<< /Length ${content.length} >>
+stream
+${content}endstream
+endobj
+`);
   const xrefStart = offset();
-  push(`xref\n0 6\n0000000000 65535 f \n`);
-  for (const off of offsets) push(`${String(off).padStart(10,'0')} 00000 n \n`);
-  push(`trailer\n<< /Size 6 /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF`);
+  push(`xref
+0 6
+0000000000 65535 f 
+`);
+  for (const off of offsets) push(`${String(off).padStart(10,'0')} 00000 n 
+`);
+  push(`trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+${xrefStart}
+%%EOF`);
 
   const blob = new Blob(pdfParts, { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = filename;
-  a.click();
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  window.open(url, '_blank', 'noopener,noreferrer');
+  setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
 function exportInterpolatedPdf() {
   const procedure = procedureEl.value;
   const configuration = configurationEl.value;
   if (!(procedure === 'offshore' && configuration === 'standard') || !currentResult || currentResult.error) {
-    alert('Rode primeiro um cálculo válido em Offshore Helideck + Standard para exportar o PDF interpolado.');
+    alert('Rode primeiro um cálculo válido em Offshore Helideck + Standard para gerar o PDF.');
     return;
   }
   const canvas = renderCompositeCanvas(currentResult);
   if (!canvas) {
-    alert('O gráfico ainda não carregou. Abra a visualização do gráfico e tente novamente.');
+    alert('A página do RFM ainda não carregou. Abra a visualização do gráfico e tente novamente.');
     return;
   }
-  const filename = `wac6800_offshore_standard_fullpage_PA${Math.round(currentResult.paFt)}_OAT${currentResult.oat}_WT${Math.round(currentResult.actualWeightKg)}_HW${Math.round(currentResult.headwindKt)}.pdf`;
-  downloadPdfFromCanvas(canvas, filename);
+  openPdfInNewTabFromCanvas(canvas);
 }
 function runCalculation() {
   const procedure = procedureEl.value;
