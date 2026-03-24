@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wac6800-v-next-eaps-on';
+const CACHE_NAME = 'wac6800-v-next-eaps-on-fullpage';
 const APP_ASSETS = [
   './',
   './index.html',
