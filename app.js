@@ -15,6 +15,9 @@ const exportPdfBtn = document.getElementById('exportPdfBtn');
 const chartPanel = document.getElementById('chartPanel');
 const chartCanvas = document.getElementById('chartCanvas');
 const chartBaseImage = document.getElementById('chartBaseImage');
+const chartExportPageImage = new Image();
+chartExportPageImage.src = 'docs/page-07.png';
+const EXPORT_PAGE_PLACEMENT = { scale: 0.740971986, offsetX: 273.206409, offsetY: 594.946143 };
 const ctx = chartCanvas.getContext('2d');
 let currentResult = null;
 const statusCard = document.getElementById('statusCard');
@@ -466,67 +469,66 @@ function drawLegendRow(targetCtx, startX, startY, items) {
 
 function renderCompositeCanvas(result = currentResult) {
   if (!chartBaseImage.complete || !chartBaseImage.naturalWidth) return null;
-  const footerHeight = 170;
+
+  const pageImageReady = chartExportPageImage.complete && chartExportPageImage.naturalWidth;
+  const useFullPage = pageImageReady;
+  const baseWidth = useFullPage ? chartExportPageImage.naturalWidth : chartBaseImage.naturalWidth;
+  const baseHeight = useFullPage ? chartExportPageImage.naturalHeight : chartBaseImage.naturalHeight;
+
   const exportCanvas = document.createElement('canvas');
-  exportCanvas.width = chartBaseImage.naturalWidth;
-  exportCanvas.height = chartBaseImage.naturalHeight + footerHeight;
+  exportCanvas.width = baseWidth;
+  exportCanvas.height = baseHeight;
   const ex = exportCanvas.getContext('2d');
-  ex.fillStyle = '#081019';
+  ex.fillStyle = '#ffffff';
   ex.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-  ex.drawImage(chartBaseImage, 0, 0);
 
-  const width = chartBaseImage.naturalWidth;
-  const height = chartBaseImage.naturalHeight;
-  const scaleX = width / chartBaseImage.getBoundingClientRect().width;
-  const scaleY = height / chartBaseImage.getBoundingClientRect().height;
-
-  const origCtx = ctx;
-  const oldCanvas = chartCanvas;
-  const oldMapX = mapPdfToCanvasX;
-  const oldMapY = mapPdfToCanvasY;
-
-  const savedCtx = ctx;
-  const tempCtx = ex;
-  const rect = { width, height };
-
-  function pxX(x) {
-    const clip = { x0: 35, y0: 145, x1: 320, y1: 505 };
-    return ((x - clip.x0) / (clip.x1 - clip.x0)) * width;
+  if (useFullPage) {
+    ex.drawImage(chartExportPageImage, 0, 0);
+  } else {
+    ex.drawImage(chartBaseImage, 0, 0);
   }
-  function pxY(y) {
-    const clip = { x0: 35, y0: 145, x1: 320, y1: 505 };
-    return ((y - clip.y0) / (clip.y1 - clip.y0)) * height;
-  }
+
+  const clipPlacement = useFullPage
+    ? {
+        x: EXPORT_PAGE_PLACEMENT.offsetX,
+        y: EXPORT_PAGE_PLACEMENT.offsetY,
+        width: chartBaseImage.naturalWidth * EXPORT_PAGE_PLACEMENT.scale,
+        height: chartBaseImage.naturalHeight * EXPORT_PAGE_PLACEMENT.scale
+      }
+    : { x: 0, y: 0, width: chartBaseImage.naturalWidth, height: chartBaseImage.naturalHeight };
+
+  const pxX = (x) => clipPlacement.x + ((x - 35) / (320 - 35)) * clipPlacement.width;
+  const pxY = (y) => clipPlacement.y + ((y - 145) / (505 - 145)) * clipPlacement.height;
 
   const drawPolyline = (points, color, lineWidth = 2, dashed = false) => {
     if (!points?.length) return;
-    tempCtx.save();
-    tempCtx.beginPath();
-    tempCtx.setLineDash(dashed ? [10, 8] : []);
-    tempCtx.strokeStyle = color;
-    tempCtx.lineWidth = lineWidth;
+    ex.save();
+    ex.beginPath();
+    ex.setLineDash(dashed ? [10, 8] : []);
+    ex.strokeStyle = color;
+    ex.lineWidth = lineWidth;
     points.forEach((point, index) => {
       const x = pxX(point.x);
       const y = pxY(point.y);
-      if (index === 0) tempCtx.moveTo(x, y);
-      else tempCtx.lineTo(x, y);
+      if (index === 0) ex.moveTo(x, y);
+      else ex.lineTo(x, y);
     });
-    tempCtx.stroke();
-    tempCtx.restore();
+    ex.stroke();
+    ex.restore();
   };
 
   const marker = (xPdf, yPdf, color, radius = 7) => {
     const x = pxX(xPdf);
     const y = pxY(yPdf);
-    tempCtx.save();
-    tempCtx.fillStyle = color;
-    tempCtx.strokeStyle = '#081019';
-    tempCtx.lineWidth = 2;
-    tempCtx.beginPath();
-    tempCtx.arc(x, y, radius, 0, Math.PI * 2);
-    tempCtx.fill();
-    tempCtx.stroke();
-    tempCtx.restore();
+    ex.save();
+    ex.fillStyle = color;
+    ex.strokeStyle = '#081019';
+    ex.lineWidth = 2;
+    ex.beginPath();
+    ex.arc(x, y, radius, 0, Math.PI * 2);
+    ex.fill();
+    ex.stroke();
+    ex.restore();
   };
 
   if (result && !result.error) {
@@ -544,82 +546,79 @@ function renderCompositeCanvas(result = currentResult) {
     const maxX = kgToX(result.maxWeight);
     const hwY = result.hw.hwY;
 
-    tempCtx.save();
-    tempCtx.strokeStyle = '#ffffff';
-    tempCtx.lineWidth = 2.5;
-    tempCtx.setLineDash([12, 10]);
-    tempCtx.beginPath();
-    tempCtx.moveTo(pxX(81.379), pxY(paY));
-    tempCtx.lineTo(pxX(271.707), pxY(paY));
-    tempCtx.stroke();
+    ex.save();
+    ex.strokeStyle = '#ffffff';
+    ex.lineWidth = 2.5;
+    ex.setLineDash([12, 10]);
+    ex.beginPath();
+    ex.moveTo(pxX(81.379), pxY(paY));
+    ex.lineTo(pxX(271.707), pxY(paY));
+    ex.stroke();
 
-    tempCtx.setLineDash([]);
-    tempCtx.strokeStyle = blue;
-    tempCtx.beginPath();
-    tempCtx.moveTo(pxX(actualX), pxY(388.388));
-    tempCtx.lineTo(pxX(actualX), pxY(488.12));
-    tempCtx.stroke();
+    ex.setLineDash([]);
+    ex.strokeStyle = blue;
+    ex.beginPath();
+    ex.moveTo(pxX(actualX), pxY(388.388));
+    ex.lineTo(pxX(actualX), pxY(488.12));
+    ex.stroke();
 
-    tempCtx.strokeStyle = withinColor;
-    tempCtx.beginPath();
-    tempCtx.moveTo(pxX(maxX), pxY(388.388));
-    tempCtx.lineTo(pxX(maxX), pxY(488.12));
-    tempCtx.stroke();
+    ex.strokeStyle = withinColor;
+    ex.beginPath();
+    ex.moveTo(pxX(maxX), pxY(388.388));
+    ex.lineTo(pxX(maxX), pxY(488.12));
+    ex.stroke();
 
-    tempCtx.setLineDash([10, 8]);
-    tempCtx.strokeStyle = '#ffffff';
-    tempCtx.beginPath();
-    tempCtx.moveTo(pxX(81.379), pxY(hwY));
-    tempCtx.lineTo(pxX(271.707), pxY(hwY));
-    tempCtx.stroke();
-    tempCtx.restore();
+    ex.setLineDash([10, 8]);
+    ex.strokeStyle = '#ffffff';
+    ex.beginPath();
+    ex.moveTo(pxX(81.379), pxY(hwY));
+    ex.lineTo(pxX(271.707), pxY(hwY));
+    ex.stroke();
+    ex.restore();
 
-    marker(noWindX, paY, '#ffffff', 7);
-    marker(actualX, paY, blue, 6);
-    marker(maxX, hwY, withinColor, 7);
+    const dotRadius = useFullPage ? 5.5 : 7;
+    marker(noWindX, paY, '#ffffff', dotRadius + 1);
+    marker(actualX, paY, blue, dotRadius);
+    marker(maxX, hwY, withinColor, dotRadius + 1);
 
-    tempCtx.save();
-    tempCtx.fillStyle = 'rgba(11,15,20,0.82)';
-    tempCtx.strokeStyle = 'rgba(255,255,255,0.08)';
-    tempCtx.lineWidth = 1;
-    tempCtx.beginPath();
-    roundRect(tempCtx, 18, 18, width - 36, 96, 16);
-    tempCtx.fill();
-    tempCtx.stroke();
-    tempCtx.fillStyle = '#e8eef7';
-    tempCtx.font = '700 24px Inter, system-ui, sans-serif';
-    tempCtx.fillText('Offshore Standard - extração vetorial do PDF', 32, 50);
-    tempCtx.font = '18px Inter, system-ui, sans-serif';
-    tempCtx.fillStyle = '#c9d6e8';
-    tempCtx.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | HW ${Math.round(result.headwindKt)} kt`, 32, 80);
-    tempCtx.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg -> Final ${Math.round(result.maxWeight)} kg`, 32, 104);
-    tempCtx.restore();
+    const boxX = 56;
+    const boxY = 56;
+    const boxW = useFullPage ? 940 : baseWidth - 36;
+    const boxH = useFullPage ? 168 : 96;
+    ex.save();
+    ex.fillStyle = 'rgba(255,255,255,0.88)';
+    ex.strokeStyle = 'rgba(8,16,25,0.16)';
+    ex.lineWidth = 1;
+    ex.beginPath();
+    roundRect(ex, boxX, boxY, boxW, boxH, 18);
+    ex.fill();
+    ex.stroke();
+    ex.fillStyle = '#081019';
+    ex.font = useFullPage ? '700 28px Inter, system-ui, sans-serif' : '700 24px Inter, system-ui, sans-serif';
+    ex.fillText('WAC 6800 - interpolação documentada sobre a página do RFM', boxX + 22, boxY + 40);
+    ex.font = useFullPage ? '20px Inter, system-ui, sans-serif' : '18px Inter, system-ui, sans-serif';
+    ex.fillStyle = '#223247';
+    ex.fillText(`Procedure: Offshore Helideck | Configuration: Standard`, boxX + 22, boxY + 76);
+    ex.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | WT ${Math.round(result.actualWeightKg)} kg | HW ${Math.round(result.headwindKt)} kt`, boxX + 22, boxY + 106);
+    ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg | Margin ${result.margin >= 0 ? '+' : ''}${Math.round(result.margin)} kg`, boxX + 22, boxY + 136);
+    ex.restore();
+
+    const legendY = useFullPage ? 1530 : baseHeight - 100;
+    drawLegendRow(ex, 80, legendY, [
+      { color: '#ffffff', label: 'Max weight interpolado' },
+      { color: '#52a8ff', label: 'Peso atual' },
+      { color: '#14b86a', label: 'Dentro' },
+      { color: '#df4f5f', label: 'Fora' }
+    ]);
+
+    ex.save();
+    ex.fillStyle = '#223247';
+    ex.font = '18px Inter, system-ui, sans-serif';
+    ex.fillText('Fonte: Leonardo AW139 Rotorcraft Flight Manual (RFM), Issue 2, Rev. 32.', 80, legendY + 42);
+    ex.fillText('Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.', 80, legendY + 68);
+    ex.fillText('Sempre consulte as publicações oficiais e atualizadas. Esta ferramenta não as substitui.', 80, legendY + 94);
+    ex.restore();
   }
-
-  const footerY = height;
-  ex.save();
-  ex.fillStyle = '#081019';
-  ex.fillRect(0, footerY, exportCanvas.width, footerHeight);
-  ex.strokeStyle = 'rgba(255,255,255,0.10)';
-  ex.lineWidth = 1;
-  ex.beginPath();
-  ex.moveTo(24, footerY + 1);
-  ex.lineTo(exportCanvas.width - 24, footerY + 1);
-  ex.stroke();
-
-  drawLegendRow(ex, 34, footerY + 42, [
-    { color: '#ffffff', label: 'Max weight interpolado' },
-    { color: '#52a8ff', label: 'Peso atual' },
-    { color: '#14b86a', label: 'Dentro' },
-    { color: '#df4f5f', label: 'Fora' }
-  ]);
-
-  ex.fillStyle = '#8ea0b7';
-  ex.font = '19px Inter, system-ui, sans-serif';
-  ex.fillText('Legenda da interpolação exportada com o gráfico do PDF.', 34, footerY + 86);
-  ex.fillText('Referência: Leonardo AW139 Rotorcraft Flight Manual (RFM), Issue 2, Rev. 32.', 34, footerY + 114);
-  ex.fillText('Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.', 34, footerY + 140);
-  ex.restore();
 
   return exportCanvas;
 }
@@ -671,7 +670,7 @@ function exportInterpolatedPdf() {
     alert('O gráfico ainda não carregou. Abra a visualização do gráfico e tente novamente.');
     return;
   }
-  const filename = `wac6800_offshore_standard_PA${Math.round(currentResult.paFt)}_OAT${currentResult.oat}_WT${Math.round(currentResult.actualWeightKg)}_HW${Math.round(currentResult.headwindKt)}.pdf`;
+  const filename = `wac6800_offshore_standard_fullpage_PA${Math.round(currentResult.paFt)}_OAT${currentResult.oat}_WT${Math.round(currentResult.actualWeightKg)}_HW${Math.round(currentResult.headwindKt)}.pdf`;
   downloadPdfFromCanvas(canvas, filename);
 }
 function runCalculation() {
