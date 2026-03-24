@@ -510,8 +510,7 @@ function renderCompositeCanvas(result = currentResult) {
   return renderAnnotatedCanvas(result, { includeFooter: true, includeSummaryBox: true });
 }
 
-function openPdfInNewTabFromCanvas(canvas) {
-  const pdfWindow = window.open('', '_blank');
+function openPdfInSameTabFromCanvas(canvas) {
   const jpegData = canvas.toDataURL('image/jpeg', 0.92);
   const base64 = jpegData.split(',')[1];
   const imageBytes = atob(base64);
@@ -572,14 +571,10 @@ ${xrefStart}
 
   const blob = new Blob(pdfParts, { type: 'application/pdf' });
   const url = URL.createObjectURL(blob);
-  if (pdfWindow) {
-    pdfWindow.location = url;
-  } else {
-    const a = document.createElement('a');
-    a.href = url;
-    a.target = '_blank';
-    a.rel = 'noopener noreferrer';
-    a.click();
+  try {
+    window.location.assign(url);
+  } catch (err) {
+    window.location.href = url;
   }
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
@@ -596,7 +591,7 @@ function exportInterpolatedPdf() {
     alert('A página do RFM ainda não carregou. Abra a visualização do gráfico e tente novamente.');
     return;
   }
-  openPdfInNewTabFromCanvas(canvas);
+  openPdfInSameTabFromCanvas(canvas);
 }
 
 function runCalculation() {
