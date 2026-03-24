@@ -447,16 +447,36 @@ function roundRect(ctx, x, y, width, height, radius) {
 }
 
 
+function drawLegendRow(targetCtx, startX, startY, items) {
+  targetCtx.save();
+  targetCtx.font = '20px Inter, system-ui, sans-serif';
+  targetCtx.textBaseline = 'middle';
+  let x = startX;
+  items.forEach((item) => {
+    targetCtx.fillStyle = item.color;
+    targetCtx.beginPath();
+    targetCtx.arc(x + 9, startY, 9, 0, Math.PI * 2);
+    targetCtx.fill();
+    targetCtx.fillStyle = '#c9d6e8';
+    targetCtx.fillText(item.label, x + 28, startY + 1);
+    x += 28 + targetCtx.measureText(item.label).width + 38;
+  });
+  targetCtx.restore();
+}
+
 function renderCompositeCanvas(result = currentResult) {
   if (!chartBaseImage.complete || !chartBaseImage.naturalWidth) return null;
+  const footerHeight = 170;
   const exportCanvas = document.createElement('canvas');
   exportCanvas.width = chartBaseImage.naturalWidth;
-  exportCanvas.height = chartBaseImage.naturalHeight;
+  exportCanvas.height = chartBaseImage.naturalHeight + footerHeight;
   const ex = exportCanvas.getContext('2d');
+  ex.fillStyle = '#081019';
+  ex.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
   ex.drawImage(chartBaseImage, 0, 0);
 
-  const width = exportCanvas.width;
-  const height = exportCanvas.height;
+  const width = chartBaseImage.naturalWidth;
+  const height = chartBaseImage.naturalHeight;
   const scaleX = width / chartBaseImage.getBoundingClientRect().width;
   const scaleY = height / chartBaseImage.getBoundingClientRect().height;
 
@@ -575,6 +595,31 @@ function renderCompositeCanvas(result = currentResult) {
     tempCtx.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg -> Final ${Math.round(result.maxWeight)} kg`, 32, 104);
     tempCtx.restore();
   }
+
+  const footerY = height;
+  ex.save();
+  ex.fillStyle = '#081019';
+  ex.fillRect(0, footerY, exportCanvas.width, footerHeight);
+  ex.strokeStyle = 'rgba(255,255,255,0.10)';
+  ex.lineWidth = 1;
+  ex.beginPath();
+  ex.moveTo(24, footerY + 1);
+  ex.lineTo(exportCanvas.width - 24, footerY + 1);
+  ex.stroke();
+
+  drawLegendRow(ex, 34, footerY + 42, [
+    { color: '#ffffff', label: 'Max weight interpolado' },
+    { color: '#52a8ff', label: 'Peso atual' },
+    { color: '#14b86a', label: 'Dentro' },
+    { color: '#df4f5f', label: 'Fora' }
+  ]);
+
+  ex.fillStyle = '#8ea0b7';
+  ex.font = '19px Inter, system-ui, sans-serif';
+  ex.fillText('Legenda da interpolação exportada com o gráfico do PDF.', 34, footerY + 86);
+  ex.fillText('Referência: Leonardo AW139 Rotorcraft Flight Manual (RFM), Issue 2, Rev. 32.', 34, footerY + 114);
+  ex.fillText('Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.', 34, footerY + 140);
+  ex.restore();
 
   return exportCanvas;
 }
