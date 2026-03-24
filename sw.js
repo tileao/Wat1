@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wac6800-v0.2.0';
+const CACHE_NAME = 'wac6800-v-next-eaps-on';
 const APP_ASSETS = [
   './',
   './index.html',
@@ -7,7 +7,10 @@ const APP_ASSETS = [
   './manifest.webmanifest',
   './data/chart-schema.json',
   './assets/offshore_standard_chart_clip.png',
-  './docs/WAC charts 6800.pdf'
+  './assets/offshore_eaps_on_chart_clip.png',
+  './docs/WAC charts 6800.pdf',
+  './docs/page-07.png',
+  './docs/page-09.png'
 ];
 
 self.addEventListener('install', (event) => {
