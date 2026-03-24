@@ -34,7 +34,9 @@ function digitsOnly(value) {
 function canAdvance(rule) {
   if (rule.offshoreOnly === true && procedureEl.value !== 'offshore') return false;
   if (rule.offshoreOnly === false && procedureEl.value === 'offshore') return false;
-  return digitsOnly(rule.el.value).length >= rule.minDigits;
+  const length = digitsOnly(rule.el.value).length;
+  if (rule.el === oatEl) return length === rule.minDigits;
+  return length >= rule.minDigits;
 }
 
 function focusNext(target) {
@@ -50,9 +52,10 @@ function focusNext(target) {
 function setupAutoAdvance() {
   autoAdvanceRules.forEach((rule) => {
     rule.el.addEventListener('input', () => {
-      if (rule.el === oatEl) {
-        oatEl.value = digitsOnly(oatEl.value).slice(0, 2);
-      }
+      if (rule.el === oatEl) sanitizeDigitsInput(oatEl, 2);
+      if (rule.el === paEl) sanitizeDigitsInput(paEl, 5);
+      if (rule.el === weightEl) sanitizeDigitsInput(weightEl, 4);
+      if (rule.el === headwindEl) sanitizeDigitsInput(headwindEl, 2);
       if (canAdvance(rule)) focusNext(rule.next);
     });
     rule.el.addEventListener('keydown', (event) => {
@@ -69,6 +72,11 @@ function toggleHeadwind() {
   headwindWrap.classList.toggle('hidden', !offshore);
   headwindEl.disabled = !offshore;
   if (!offshore) headwindEl.value = '';
+}
+
+function sanitizeDigitsInput(el, maxLen = null) {
+  const digits = digitsOnly(el.value);
+  el.value = maxLen ? digits.slice(0, maxLen) : digits;
 }
 
 function loadDemo() {
@@ -104,10 +112,10 @@ function runCalculation() {
   const actualWeight = Number(weightEl.value);
   const headwind = Number(headwindEl.value || 0);
 
-  if ([pa, oat, actualWeight].some(Number.isNaN)) {
+  if (!procedure || !configuration || [pa, oat, actualWeight].some(Number.isNaN)) {
     statusCard.className = 'card status neutral';
     statusTitle.textContent = 'Dados incompletos';
-    statusText.textContent = 'Preencha altitude, OAT e peso atual.';
+    statusText.textContent = 'Selecione procedure, configuration e preencha altitude, OAT e peso atual.';
     maxWeightEl.textContent = '—';
     marginEl.textContent = '—';
     drawChart();
@@ -226,7 +234,7 @@ toggleChart.addEventListener('click', () => {
   if (!chartPanel.classList.contains('hidden')) drawChart();
 });
 
-procedureEl.addEventListener('change', toggleHeadwind);
+procedureEl.addEventListener('change', () => { toggleHeadwind(); drawChart(); });
 configurationEl.addEventListener('change', () => {});
 
 window.addEventListener('beforeinstallprompt', (event) => {
@@ -247,8 +255,6 @@ if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
 }
 
-procedureEl.value = 'offshore';
-configurationEl.value = 'standard';
 toggleHeadwind();
 setupAutoAdvance();
 drawChart();
