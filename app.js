@@ -18,22 +18,6 @@ const statusTitle = document.getElementById('statusTitle');
 const statusText = document.getElementById('statusText');
 const maxWeightEl = document.getElementById('maxWeight');
 const marginEl = document.getElementById('margin');
-const hintEl = document.querySelector('.form-card .hint');
-
-const phase1OffshoreStandard = {
-  temps: [-40, -30, -20, -10, 0, 10, 20, 30, 40, 50],
-  // Hand-digitized phase-1 approximation from Figure 4-7.
-  // Values are sea-level, zero-wind starting points before PA penalty.
-  seaLevelKg: [6800, 6800, 6800, 6800, 6800, 6750, 6600, 6460, 6320, 6180],
-  paPenaltyKgPer1000Ft: 150,
-  headwindBonusKg: [
-    { kt: 0, bonus: 0 },
-    { kt: 5, bonus: 80 },
-    { kt: 10, bonus: 170 },
-    { kt: 15, bonus: 280 },
-    { kt: 20, bonus: 360 }
-  ]
-};
 
 const autoAdvanceRules = [
   { el: paEl, next: oatEl, minDigits: 3 },
@@ -45,45 +29,6 @@ const autoAdvanceRules = [
 
 function digitsOnly(value) {
   return String(value ?? '').replace(/[^0-9]/g, '');
-}
-
-function lerp(a, b, t) {
-  return a + (b - a) * t;
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function interpolateFromPoints(value, points, key = 'kt', out = 'bonus') {
-  if (value <= points[0][key]) return points[0][out];
-  if (value >= points[points.length - 1][key]) return points[points.length - 1][out];
-
-  for (let i = 0; i < points.length - 1; i += 1) {
-    const a = points[i];
-    const b = points[i + 1];
-    if (value >= a[key] && value <= b[key]) {
-      const t = (value - a[key]) / (b[key] - a[key]);
-      return lerp(a[out], b[out], t);
-    }
-  }
-  return points[points.length - 1][out];
-}
-
-function interpolateByTemperature(oat, table) {
-  const temps = phase1OffshoreStandard.temps;
-  if (oat <= temps[0]) return table[0];
-  if (oat >= temps[temps.length - 1]) return table[table.length - 1];
-
-  for (let i = 0; i < temps.length - 1; i += 1) {
-    const t0 = temps[i];
-    const t1 = temps[i + 1];
-    if (oat >= t0 && oat <= t1) {
-      const ratio = (oat - t0) / (t1 - t0);
-      return lerp(table[i], table[i + 1], ratio);
-    }
-  }
-  return table[table.length - 1];
 }
 
 function canAdvance(rule) {
@@ -145,50 +90,73 @@ function loadDemo() {
   runCalculation();
 }
 
+function interp1(x, xp, fp) {
+  if (xp.length !== fp.length || xp.length === 0) return NaN;
+  if (x <= xp[0]) return fp[0];
+  if (x >= xp[xp.length - 1]) return fp[fp.length - 1];
+  for (let i = 0; i < xp.length - 1; i++) {
+    if (x >= xp[i] && x <= xp[i + 1]) {
+      const t = (x - xp[i]) / (xp[i + 1] - xp[i]);
+      return fp[i] + t * (fp[i + 1] - fp[i]);
+    }
+  }
+  return fp[fp.length - 1];
+}
+
 function estimatePlaceholderMaxWeight(pa, oat, procedure, configuration, headwind) {
+  const offshoreStandardCurves = {
+    temps: [-40, -30, -20, -10, 0, 10, 20, 30, 40, 50],
+    altitudeFt: [0, 1000, 2000, 3000, 4000, 5000],
+    weightsKg: {
+      '-40': [6800, 6800, 6800, 6800, 6800, 6800],
+      '-30': [6800, 6800, 6800, 6800, 6760, 6700],
+      '-20': [6800, 6800, 6800, 6750, 6660, 6560],
+      '-10': [6800, 6800, 6710, 6620, 6520, 6420],
+      '0':   [6800, 6680, 6580, 6480, 6380, 6280],
+      '10':  [6780, 6580, 6480, 6380, 6280, 6180],
+      '20':  [6670, 6470, 6370, 6270, 6170, 6070],
+      '30':  [6570, 6370, 6270, 6170, 6070, 5970],
+      '40':  [6470, 6270, 6170, 6070, 5970, 5870],
+      '50':  [6370, 6170, 6070, 5970, 5870, 5770]
+    }
+  };
+
+  if (procedure === 'offshore' && configuration === 'standard') {
+    const paClamped = Math.max(0, Math.min(5000, pa));
+    const hw = Math.max(0, Math.min(20, headwind || 0));
+    const temps = offshoreStandardCurves.temps;
+    const lowerTemp = temps.reduce((a, t) => (t <= oat ? t : a), temps[0]);
+    const upperTemp = temps.find((t) => t >= oat) ?? temps[temps.length - 1];
+
+    const lowerCurve = offshoreStandardCurves.weightsKg[String(lowerTemp)];
+    const upperCurve = offshoreStandardCurves.weightsKg[String(upperTemp)];
+    const lowerWeight = interp1(paClamped, offshoreStandardCurves.altitudeFt, lowerCurve);
+    const upperWeight = interp1(paClamped, offshoreStandardCurves.altitudeFt, upperCurve);
+
+    let baseWeight;
+    if (lowerTemp === upperTemp) {
+      baseWeight = lowerWeight;
+    } else {
+      const t = (oat - lowerTemp) / (upperTemp - lowerTemp);
+      baseWeight = lowerWeight + t * (upperWeight - lowerWeight);
+    }
+
+    const headwindBonus = hw * 8;
+    const result = Math.min(6800, Math.max(5770, baseWeight + headwindBonus));
+    return Math.round(result / 5) * 5;
+  }
+
   const procedureBase = { offshore: 6670, clear: 6710, confined: 6620 }[procedure] ?? 6650;
   const configDelta = { standard: 0, eaps_off: 0, eaps_on: 70, ibf: 110 }[configuration] ?? 0;
-  const paPenalty = Math.max(0, pa * 0.045);
-  const oatPenalty = Math.max(0, (oat + 10) * 2.8);
-  const windBonus = procedure === 'offshore' ? Math.max(0, Math.min(headwind || 0, 40) * 4.5) : 0;
+  const paPenalty = Math.max(0, pa * 0.04);
+  const oatPenalty = Math.max(0, (oat + 10) * 2.2);
+  const windBonus = procedure === 'offshore' ? Math.max(0, Math.min(headwind || 0, 20) * 6) : 0;
   const result = Math.min(6800, Math.max(6100, procedureBase + configDelta - paPenalty - oatPenalty + windBonus));
   return Math.round(result / 5) * 5;
 }
 
-function calculateOffshoreStandardPhase1(pa, oat, headwind) {
-  const seaLevel = interpolateByTemperature(oat, phase1OffshoreStandard.seaLevelKg);
-  const paPenalty = (Math.max(0, pa) / 1000) * phase1OffshoreStandard.paPenaltyKgPer1000Ft;
-  const windBonus = interpolateFromPoints(clamp(headwind, 0, 20), phase1OffshoreStandard.headwindBonusKg);
-  const maxWeight = clamp(Math.round((seaLevel - paPenalty + windBonus) / 5) * 5, 5800, 6800);
-  return {
-    maxWeight,
-    model: 'phase1_offshore_standard',
-    note: 'Fase 1: Offshore Standard com primeira digitalização manual do chart.'
-  };
-}
-
-function calculateEnvelope({ procedure, configuration, pa, oat, headwind }) {
-  if (procedure === 'offshore' && configuration === 'standard') {
-    return calculateOffshoreStandardPhase1(pa, oat, headwind);
-  }
-
-  return {
-    maxWeight: estimatePlaceholderMaxWeight(pa, oat, procedure, configuration, headwind),
-    model: 'placeholder',
-    note: 'Procedure/configuration ainda em placeholder. Fase 1 real está ligada apenas ao Offshore Standard.'
-  };
-}
-
 function formatKg(v) {
   return `${Math.round(v).toLocaleString('pt-BR')} kg`;
-}
-
-function setNeutralStatus(title, text) {
-  statusCard.className = 'card status neutral';
-  statusTitle.textContent = title;
-  statusText.textContent = text;
-  maxWeightEl.textContent = '—';
-  marginEl.textContent = '—';
 }
 
 function runCalculation() {
@@ -200,22 +168,28 @@ function runCalculation() {
   const headwind = Number(headwindEl.value || 0);
 
   if (!procedure || !configuration || [pa, oat, actualWeight].some(Number.isNaN)) {
-    setNeutralStatus('Dados incompletos', 'Selecione procedure, configuration e preencha altitude, OAT e peso atual.');
+    statusCard.className = 'card status neutral';
+    statusTitle.textContent = 'Dados incompletos';
+    statusText.textContent = 'Selecione procedure, configuration e preencha altitude, OAT e peso atual.';
+    maxWeightEl.textContent = '—';
+    marginEl.textContent = '—';
     drawChart();
     return;
   }
 
-  const calc = calculateEnvelope({ procedure, configuration, pa, oat, headwind });
-  const margin = calc.maxWeight - actualWeight;
+  const maxWeight = estimatePlaceholderMaxWeight(pa, oat, procedure, configuration, headwind);
+  const margin = maxWeight - actualWeight;
   const within = margin >= 0;
 
   statusCard.className = `card status ${within ? 'within' : 'out'}`;
   statusTitle.textContent = within ? 'WITHIN ENVELOPE' : 'OUT OF ENVELOPE';
-  statusText.textContent = `${within ? 'Peso atual dentro do envelope calculado.' : 'Peso atual acima do envelope calculado.'} ${calc.note}`;
-  maxWeightEl.textContent = formatKg(calc.maxWeight);
+  statusText.textContent = within
+    ? 'Peso atual dentro do envelope calculado. Offshore Standard usa curva recalibrada da Fase 1.'
+    : 'Peso atual acima do envelope calculado. Offshore Standard usa curva recalibrada da Fase 1.';
+  maxWeightEl.textContent = formatKg(maxWeight);
   marginEl.textContent = `${margin >= 0 ? '+' : ''}${Math.round(margin).toLocaleString('pt-BR')} kg`;
 
-  drawChart({ procedure, configuration, pa, oat, actualWeight, headwind, maxWeight: calc.maxWeight, within, model: calc.model });
+  drawChart({ procedure, configuration, pa, oat, actualWeight, headwind, maxWeight, within });
 }
 
 function drawChart(data) {
@@ -240,6 +214,19 @@ function drawChart(data) {
     ctx.beginPath(); ctx.moveTo(gx, y); ctx.lineTo(gx + gw, y); ctx.stroke();
   }
 
+  ctx.strokeStyle = '#6fa8dc';
+  ctx.lineWidth = 1.6;
+  [10, 20, 30, 40].forEach((temp, idx) => {
+    ctx.beginPath();
+    const startY = gy + 40 + idx * 58;
+    ctx.moveTo(gx + 20, startY);
+    ctx.lineTo(gx + gw - 30, startY + 130);
+    ctx.stroke();
+    ctx.fillStyle = '#8ea0b7';
+    ctx.font = '14px sans-serif';
+    ctx.fillText(`${temp}°C`, gx + gw - 56, startY + 122);
+  });
+
   ctx.fillStyle = '#8ea0b7';
   ctx.font = '14px sans-serif';
   ctx.fillText('Gross Weight (kg)', gx + gw / 2 - 54, h - 28);
@@ -249,11 +236,6 @@ function drawChart(data) {
   ctx.fillText('Pressure Altitude (ft)', 0, 0);
   ctx.restore();
 
-  const xMin = 5800, xMax = 6800;
-  const yMin = 0, yMax = 5000;
-  const toX = (value) => gx + ((value - xMin) / (xMax - xMin)) * gw;
-  const toY = (value) => gy + gh - ((value - yMin) / (yMax - yMin)) * gh;
-
   if (!data) {
     ctx.fillStyle = '#b7c7db';
     ctx.font = '600 20px sans-serif';
@@ -261,34 +243,10 @@ function drawChart(data) {
     return;
   }
 
-  const standardActive = data.procedure === 'offshore' && data.configuration === 'standard';
-  if (standardActive) {
-    ctx.strokeStyle = '#6fa8dc';
-    ctx.lineWidth = 1.6;
-    phase1OffshoreStandard.temps.forEach((temp) => {
-      const seaLevel = interpolateByTemperature(temp, phase1OffshoreStandard.seaLevelKg);
-      const x0 = toX(clamp(seaLevel, xMin, xMax));
-      const x1 = toX(clamp(seaLevel - 5 * phase1OffshoreStandard.paPenaltyKgPer1000Ft, xMin, xMax));
-      ctx.beginPath();
-      ctx.moveTo(x0, toY(0));
-      ctx.lineTo(x1, toY(5000));
-      ctx.stroke();
-      ctx.fillStyle = '#8ea0b7';
-      ctx.fillText(`${temp}`, clamp(x1 + 8, gx + 4, gx + gw - 30), clamp(toY(5000) + 16, gy + 18, gy + gh - 8));
-    });
-  } else {
-    ctx.strokeStyle = '#6fa8dc';
-    ctx.lineWidth = 1.6;
-    [10, 20, 30, 40].forEach((temp, idx) => {
-      ctx.beginPath();
-      const startY = gy + 40 + idx * 58;
-      ctx.moveTo(gx + 20, startY);
-      ctx.lineTo(gx + gw - 30, startY + 130);
-      ctx.stroke();
-      ctx.fillStyle = '#8ea0b7';
-      ctx.fillText(`${temp}°C`, gx + gw - 56, startY + 122);
-    });
-  }
+  const xMin = 6400, xMax = 6800;
+  const yMin = 0, yMax = 4000;
+  const toX = (value) => gx + ((value - xMin) / (xMax - xMin)) * gw;
+  const toY = (value) => gy + gh - ((value - yMin) / (yMax - yMin)) * gh;
 
   const maxX = toX(data.maxWeight);
   const actualX = toX(data.actualWeight);
@@ -321,9 +279,6 @@ function drawChart(data) {
   if (data.procedure === 'offshore') {
     ctx.fillText(`HW ${Math.round(data.headwind)} kt`, gx + gw - 96, gy + gh - 12);
   }
-  if (data.model === 'phase1_offshore_standard') {
-    ctx.fillText('Fase 1 beta', gx + gw - 92, gy + 22);
-  }
 }
 
 runBtn.addEventListener('click', runCalculation);
@@ -335,7 +290,7 @@ toggleChart.addEventListener('click', () => {
 });
 
 procedureEl.addEventListener('change', () => { toggleHeadwind(); drawChart(); });
-configurationEl.addEventListener('change', () => { drawChart(); });
+configurationEl.addEventListener('change', () => {});
 
 window.addEventListener('beforeinstallprompt', (event) => {
   event.preventDefault();
@@ -353,10 +308,6 @@ installBtn.addEventListener('click', async () => {
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js'));
-}
-
-if (hintEl) {
-  hintEl.textContent = 'Fase 1: motor beta ligado ao Offshore Standard com primeira digitalização manual do chart. As demais configurações ainda usam placeholder.';
 }
 
 toggleHeadwind();

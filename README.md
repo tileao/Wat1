@@ -27,3 +27,8 @@ Digitalizar primeiro:
 3. Offshore Helideck – IBF Installed
 
 Depois ligar a camada gráfica ao motor real.
+
+
+## Phase 1 recalibrated build
+- Offshore Helideck + Standard uses a recalibrated beta curve.
+- Other configurations remain placeholder estimates.
