@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wac6800-cache-v29';
+const CACHE_NAME = 'wac6800-cache-v30';
 const APP_ASSETS = [
   './',
   './index.html',

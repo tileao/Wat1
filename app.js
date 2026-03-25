@@ -36,6 +36,13 @@ const EXACT_PROFILES = {
   'offshore:eaps_on': OFFSHORE_EAPS_ON_EXACT
 };
 
+OFFSHORE_STANDARD_EXACT.title = 'Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure';
+OFFSHORE_STANDARD_EXACT.page = 'docs/page-07.png';
+OFFSHORE_STANDARD_EXACT.main.minPaFt = 0;
+OFFSHORE_STANDARD_EXACT.main.yMinFt = OFFSHORE_STANDARD_EXACT.main.yZeroFt;
+OFFSHORE_EAPS_ON_EXACT.main.minPaFt = -1000;
+OFFSHORE_EAPS_ON_EXACT.main.yMinFt = 432.153;
+
 function profileKey(procedure = procedureEl.value, configuration = configurationEl.value) {
   return `${procedure}:${configuration}`;
 }
@@ -188,8 +195,15 @@ function kgToX(kg, profile = getActiveProfile()) {
 
 function paToY(paFt, profile = getActiveProfile()) {
   const m = profile.main;
-  const pa = clamp(paFt, 0, m.maxPaFt);
-  return m.yZeroFt - (pa / m.maxPaFt) * (m.yZeroFt - m.yTopFt);
+  const minPaFt = Number.isFinite(m.minPaFt) ? m.minPaFt : 0;
+  const yMinFt = Number.isFinite(m.yMinFt) ? m.yMinFt : m.yZeroFt;
+  const pa = clamp(paFt, minPaFt, m.maxPaFt);
+  if (pa <= 0 && minPaFt < 0) {
+    const t = (pa - minPaFt) / (0 - minPaFt);
+    return yMinFt + t * (m.yZeroFt - yMinFt);
+  }
+  const t = (pa - 0) / (m.maxPaFt - 0);
+  return m.yZeroFt + t * (m.yTopFt - m.yZeroFt);
 }
 
 function hwToY(hwKt, profile = getActiveProfile()) {
@@ -231,7 +245,7 @@ function getNoWindLimit(paFt, oat, profile = getActiveProfile()) {
   const paY = paToY(paFt, profile);
 
   if (oat < temps[0] || oat > temps[temps.length - 1]) {
-    return { error: 'OAT fora da faixa do chart Offshore Standard (-40°C a 50°C).' };
+    return { error: `OAT fora da faixa do chart ${getProfileLabel(profile)} (-40°C a 50°C).` };
   }
 
   let lower = temps[0];
@@ -275,11 +289,19 @@ function getNoWindLimit(paFt, oat, profile = getActiveProfile()) {
 function getHeadwindAdjustedLimit(baseKg, headwindKt, profile = getActiveProfile()) {
   const hw = clamp(headwindKt, 0, profile.headwind.maxKt);
   const familyBases = Object.keys(profile.headwindCurves).map(Number).sort((a, b) => a - b);
-  const targetY = hwToY(hw);
+  const targetY = hwToY(hw, profile);
+  if (hw <= 0) {
+    return {
+      hwY: targetY,
+      familyBases,
+      familyValues: familyBases.slice(),
+      maxKg: baseKg
+    };
+  }
   const familyValues = familyBases.map((base) => {
     const curve = toPoints(profile.headwindCurves[String(base)]);
     const x = xAtY(curve, targetY);
-    return xToKg(x);
+    return xToKg(x, profile);
   });
   return {
     hwY: targetY,
@@ -388,10 +410,10 @@ function drawOverlay(result) {
     }
     ctx.fillStyle = '#e8eef7';
     ctx.font = '700 28px Inter, system-ui, sans-serif';
-    ctx.fillText('Offshore Standard - overlay PDF', 32, 48);
+    ctx.fillText(`${getCurrentProfileTitle()} - overlay PDF`, 32, 48);
     ctx.fillStyle = '#8ea0b7';
     ctx.font = '20px Inter, system-ui, sans-serif';
-    ctx.fillText('O cálculo exato aparece aqui quando você rodar o chart Standard.', 32, 84);
+    ctx.fillText('O cálculo exato aparece aqui quando você rodar um perfil exato disponível.', 32, 84);
     return;
   }
 
@@ -412,8 +434,10 @@ function drawOverlay(result) {
 
   const paY = result.noWind.paY;
   const noWindX = result.noWind.noWindX;
-  const actualX = kgToX(result.actualWeightKg);
-  const maxX = kgToX(result.maxWeight);
+  const profileMain = profile.main;
+  const profileHeadwind = profile.headwind;
+  const actualX = kgToX(result.actualWeightKg, profile);
+  const maxX = kgToX(result.maxWeight, profile);
   const hwY = result.hw.hwY;
 
   // altitude line on main chart
@@ -422,31 +446,31 @@ function drawOverlay(result) {
   ctx.lineWidth = 2.5;
   ctx.setLineDash([12, 10]);
   ctx.beginPath();
-  ctx.moveTo(mapPdfToCanvasX(81.379), mapPdfToCanvasY(paY));
-  ctx.lineTo(mapPdfToCanvasX(271.707), mapPdfToCanvasY(paY));
+  ctx.moveTo(mapPdfToCanvasX(profileMain.xMin), mapPdfToCanvasY(paY));
+  ctx.lineTo(mapPdfToCanvasX(profileMain.xMax), mapPdfToCanvasY(paY));
   ctx.stroke();
 
   // actual weight vertical
   ctx.setLineDash([]);
   ctx.strokeStyle = blue;
   ctx.beginPath();
-  ctx.moveTo(mapPdfToCanvasX(actualX), mapPdfToCanvasY(388.388));
-  ctx.lineTo(mapPdfToCanvasX(actualX), mapPdfToCanvasY(488.12));
+  ctx.moveTo(mapPdfToCanvasX(actualX), mapPdfToCanvasY(profileMain.yMinFt));
+  ctx.lineTo(mapPdfToCanvasX(actualX), mapPdfToCanvasY(profileHeadwind.yBottom));
   ctx.stroke();
 
   // max weight vertical
   ctx.strokeStyle = withinColor;
   ctx.beginPath();
-  ctx.moveTo(mapPdfToCanvasX(maxX), mapPdfToCanvasY(388.388));
-  ctx.lineTo(mapPdfToCanvasX(maxX), mapPdfToCanvasY(488.12));
+  ctx.moveTo(mapPdfToCanvasX(maxX), mapPdfToCanvasY(profileMain.yMinFt));
+  ctx.lineTo(mapPdfToCanvasX(maxX), mapPdfToCanvasY(profileHeadwind.yBottom));
   ctx.stroke();
 
   // headwind line
   ctx.setLineDash([10, 8]);
   ctx.strokeStyle = '#ffffff';
   ctx.beginPath();
-  ctx.moveTo(mapPdfToCanvasX(81.379), mapPdfToCanvasY(hwY));
-  ctx.lineTo(mapPdfToCanvasX(271.707), mapPdfToCanvasY(hwY));
+  ctx.moveTo(mapPdfToCanvasX(profileMain.xMin), mapPdfToCanvasY(hwY));
+  ctx.lineTo(mapPdfToCanvasX(profileMain.xMax), mapPdfToCanvasY(hwY));
   ctx.stroke();
   ctx.restore();
 
@@ -596,8 +620,10 @@ function renderCompositeCanvas(result = currentResult) {
 
     const paY = result.noWind.paY;
     const noWindX = result.noWind.noWindX;
-    const actualX = kgToX(result.actualWeightKg);
-    const maxX = kgToX(result.maxWeight);
+    const profileMain = profile.main;
+    const profileHeadwind = profile.headwind;
+    const actualX = kgToX(result.actualWeightKg, profile);
+    const maxX = kgToX(result.maxWeight, profile);
     const hwY = result.hw.hwY;
 
     ex.save();
@@ -605,28 +631,28 @@ function renderCompositeCanvas(result = currentResult) {
     ex.lineWidth = 2.5;
     ex.setLineDash([12, 10]);
     ex.beginPath();
-    ex.moveTo(pxX(81.379), pxY(paY));
-    ex.lineTo(pxX(271.707), pxY(paY));
+    ex.moveTo(pxX(profileMain.xMin), pxY(paY));
+    ex.lineTo(pxX(profileMain.xMax), pxY(paY));
     ex.stroke();
 
     ex.setLineDash([]);
     ex.strokeStyle = blue;
     ex.beginPath();
-    ex.moveTo(pxX(actualX), pxY(388.388));
-    ex.lineTo(pxX(actualX), pxY(488.12));
+    ex.moveTo(pxX(actualX), pxY(profileMain.yMinFt));
+    ex.lineTo(pxX(actualX), pxY(profileHeadwind.yBottom));
     ex.stroke();
 
     ex.strokeStyle = withinColor;
     ex.beginPath();
-    ex.moveTo(pxX(maxX), pxY(388.388));
-    ex.lineTo(pxX(maxX), pxY(488.12));
+    ex.moveTo(pxX(maxX), pxY(profileMain.yMinFt));
+    ex.lineTo(pxX(maxX), pxY(profileHeadwind.yBottom));
     ex.stroke();
 
     ex.setLineDash([10, 8]);
     ex.strokeStyle = '#ffffff';
     ex.beginPath();
-    ex.moveTo(pxX(81.379), pxY(hwY));
-    ex.lineTo(pxX(271.707), pxY(hwY));
+    ex.moveTo(pxX(profileMain.xMin), pxY(hwY));
+    ex.lineTo(pxX(profileMain.xMax), pxY(hwY));
     ex.stroke();
     ex.restore();
 
