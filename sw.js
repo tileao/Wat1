@@ -1,4 +1,4 @@
-const CACHE_NAME = 'wac6800-standard-fullpage-generate-pdf-same-tab-v2';
+const CACHE_NAME = 'wac6800-standard-fullpage-generate-pdf-share-download-v3';
 const APP_ASSETS = [
   './',
   './index.html',

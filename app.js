@@ -12,6 +12,7 @@ const runBtn = document.getElementById('runBtn');
 const demoBtn = document.getElementById('demoBtn');
 const toggleChart = document.getElementById('toggleChart');
 const exportPdfBtn = document.getElementById('exportPdfBtn');
+const EXPORT_FILE_NAME = 'wac6800-offshore-standard.pdf';
 const chartPanel = document.getElementById('chartPanel');
 const chartCanvas = document.getElementById('chartCanvas');
 const chartBaseImage = document.getElementById('chartBaseImage');
@@ -303,7 +304,7 @@ function drawOverlay(result) {
   if (!ensureCanvasReady()) return;
   const rect = chartCanvas.getBoundingClientRect();
   ctx.clearRect(0, 0, rect.width, rect.height);
-  const preview = renderAnnotatedCanvas(result, { includeFooter: false, includeSummaryBox: false });
+  const preview = renderAnnotatedCanvas(result, { includeFooter: false, includeSummaryBox: true, compactSummaryBox: true });
   if (preview) {
     ctx.drawImage(preview, 0, 0, rect.width, rect.height);
     return;
@@ -353,6 +354,7 @@ function renderAnnotatedCanvas(result = currentResult, options = {}) {
 
   const includeFooter = options.includeFooter ?? true;
   const includeSummaryBox = options.includeSummaryBox ?? includeFooter;
+  const compactSummaryBox = options.compactSummaryBox ?? false;
   const baseWidth = chartExportPageImage.naturalWidth;
   const baseHeight = chartExportPageImage.naturalHeight;
   const footerExtra = includeFooter ? 190 : 0;
@@ -461,26 +463,34 @@ function renderAnnotatedCanvas(result = currentResult, options = {}) {
     marker(maxX, hwY, withinColor, dotRadius + 1);
 
     if (includeSummaryBox) {
-      const boxX = 56;
-      const boxY = 56;
-      const boxW = 940;
-      const boxH = 168;
+      const boxX = compactSummaryBox ? 72 : 56;
+      const boxY = compactSummaryBox ? 58 : 56;
+      const boxW = compactSummaryBox ? 900 : 940;
+      const boxH = compactSummaryBox ? 126 : 168;
       ex.save();
-      ex.fillStyle = 'rgba(255,255,255,0.88)';
-      ex.strokeStyle = 'rgba(8,16,25,0.16)';
+      ex.fillStyle = compactSummaryBox ? 'rgba(36,42,51,0.86)' : 'rgba(255,255,255,0.88)';
+      ex.strokeStyle = compactSummaryBox ? 'rgba(255,255,255,0.08)' : 'rgba(8,16,25,0.16)';
       ex.lineWidth = 1;
       ex.beginPath();
-      roundRect(ex, boxX, boxY, boxW, boxH, 18);
+      roundRect(ex, boxX, boxY, boxW, boxH, compactSummaryBox ? 24 : 18);
       ex.fill();
       ex.stroke();
-      ex.fillStyle = '#081019';
-      ex.font = '700 28px Inter, system-ui, sans-serif';
-      ex.fillText('WAC 6800 - interpolação documentada sobre a página do RFM', boxX + 22, boxY + 40);
-      ex.font = '20px Inter, system-ui, sans-serif';
-      ex.fillStyle = '#223247';
-      ex.fillText(`Procedure: Offshore Helideck | Configuration: Standard`, boxX + 22, boxY + 76);
-      ex.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | WT ${Math.round(result.actualWeightKg)} kg | HW ${Math.round(result.headwindKt)} kt`, boxX + 22, boxY + 106);
-      ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg | Margin ${result.margin >= 0 ? '+' : ''}${Math.round(result.margin)} kg`, boxX + 22, boxY + 136);
+      ex.fillStyle = compactSummaryBox ? '#f2f5fb' : '#081019';
+      ex.font = compactSummaryBox ? '700 24px Inter, system-ui, sans-serif' : '700 28px Inter, system-ui, sans-serif';
+      ex.fillText('Offshore Standard - página completa do RFM', boxX + 22, boxY + (compactSummaryBox ? 38 : 40));
+      ex.font = compactSummaryBox ? '18px Inter, system-ui, sans-serif' : '20px Inter, system-ui, sans-serif';
+      if (!compactSummaryBox) {
+        ex.fillStyle = '#223247';
+        ex.fillText(`Procedure: Offshore Helideck | Configuration: Standard`, boxX + 22, boxY + 76);
+        ex.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | WT ${Math.round(result.actualWeightKg)} kg | HW ${Math.round(result.headwindKt)} kt`, boxX + 22, boxY + 106);
+        ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg | Margin ${result.margin >= 0 ? '+' : ''}${Math.round(result.margin)} kg`, boxX + 22, boxY + 136);
+      } else {
+        ex.fillStyle = '#d8e2f0';
+        ex.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | HW ${Math.round(result.headwindKt)} kt`, boxX + 22, boxY + 76);
+        ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg`, boxX + 22, boxY + 106);
+        ex.fillStyle = result.within ? '#7ef0b0' : '#ff8b98';
+        ex.fillText(`WT ${Math.round(result.actualWeightKg)} kg | Margin ${result.margin >= 0 ? '+' : ''}${Math.round(result.margin)} kg`, boxX + 520, boxY + 106);
+      }
       ex.restore();
     }
 
@@ -510,7 +520,7 @@ function renderCompositeCanvas(result = currentResult) {
   return renderAnnotatedCanvas(result, { includeFooter: true, includeSummaryBox: true });
 }
 
-function openPdfInSameTabFromCanvas(canvas) {
+function buildPdfBlobFromCanvas(canvas) {
   const jpegData = canvas.toDataURL('image/jpeg', 0.92);
   const base64 = jpegData.split(',')[1];
   const imageBytes = atob(base64);
@@ -569,17 +579,35 @@ startxref
 ${xrefStart}
 %%EOF`);
 
-  const blob = new Blob(pdfParts, { type: 'application/pdf' });
-  const url = URL.createObjectURL(blob);
-  try {
-    window.location.assign(url);
-  } catch (err) {
-    window.location.href = url;
+  return new Blob(pdfParts, { type: 'application/pdf' });
+}
+
+async function shareOrDownloadPdfFromCanvas(canvas) {
+  const blob = buildPdfBlobFromCanvas(canvas);
+  const file = new File([blob], EXPORT_FILE_NAME, { type: 'application/pdf' });
+
+  if (navigator.canShare && navigator.share) {
+    try {
+      if (navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'WAC 6800 PDF', text: 'PDF do cálculo documentado.' });
+        return;
+      }
+    } catch (err) {
+      if (err?.name === 'AbortError') return;
+    }
   }
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = EXPORT_FILE_NAME;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 60000);
 }
 
-function exportInterpolatedPdf() {
+async function exportInterpolatedPdf() {
   const procedure = procedureEl.value;
   const configuration = configurationEl.value;
   if (!(procedure === 'offshore' && configuration === 'standard') || !currentResult || currentResult.error) {
@@ -591,7 +619,7 @@ function exportInterpolatedPdf() {
     alert('A página do RFM ainda não carregou. Abra a visualização do gráfico e tente novamente.');
     return;
   }
-  openPdfInSameTabFromCanvas(canvas);
+  await shareOrDownloadPdfFromCanvas(canvas);
 }
 
 function runCalculation() {
@@ -653,13 +681,27 @@ function runCalculation() {
 }
 
 
+
+function updatePdfButtonLabel() {
+  if (navigator.canShare && navigator.share) {
+    try {
+      const probe = new File([new Blob(['x'], { type: 'application/pdf' })], 'x.pdf', { type: 'application/pdf' });
+      if (navigator.canShare({ files: [probe] })) {
+        exportPdfBtn.textContent = 'Compartilhar PDF';
+        return;
+      }
+    } catch (err) {}
+  }
+  exportPdfBtn.textContent = 'Baixar PDF';
+}
+
 toggleChart.addEventListener('click', () => {
   chartPanel.classList.toggle('hidden');
   toggleChart.textContent = chartPanel.classList.contains('hidden') ? 'Mostrar gráfico' : 'Ocultar gráfico';
   if (!chartPanel.classList.contains('hidden')) drawOverlay();
 });
 
-exportPdfBtn.addEventListener('click', exportInterpolatedPdf);
+exportPdfBtn.addEventListener('click', () => { exportInterpolatedPdf(); });
 demoBtn.addEventListener('click', loadDemo);
 runBtn.addEventListener('click', runCalculation);
 procedureEl.addEventListener('change', () => {
@@ -696,4 +738,5 @@ window.addEventListener('resize', () => {
 
 setupAutoAdvance();
 toggleHeadwind();
+updatePdfButtonLabel();
 drawOverlay();
