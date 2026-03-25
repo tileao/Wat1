@@ -1,4 +1,3 @@
-
 let deferredPrompt = null;
 const installBtn = document.getElementById('installBtn');
 const procedureEl = document.getElementById('procedure');
@@ -12,17 +11,13 @@ const runBtn = document.getElementById('runBtn');
 const demoBtn = document.getElementById('demoBtn');
 const toggleChart = document.getElementById('toggleChart');
 const exportPdfBtn = document.getElementById('exportPdfBtn');
-const EXPORT_FILE_NAME = 'wac6800-offshore-standard.pdf';
 const chartPanel = document.getElementById('chartPanel');
 const chartCanvas = document.getElementById('chartCanvas');
 const chartBaseImage = document.getElementById('chartBaseImage');
-const chartClipImage = new Image();
-chartClipImage.src = 'assets/offshore_standard_chart_clip.png';
-const chartExportPageImage = new Image();
-chartExportPageImage.src = 'docs/page-07.png';
-const EXPORT_PAGE_PLACEMENT = { scale: 0.740971986, offsetX: 273.206409, offsetY: 594.946143 };
+const chartReferenceEl = document.getElementById('chartReference');
+const formHintEl = document.getElementById('formHint');
+const chartHintEl = document.getElementById('chartHint');
 const ctx = chartCanvas.getContext('2d');
-let currentResult = null;
 const statusCard = document.getElementById('statusCard');
 const statusBadge = statusCard.querySelector('.status-badge');
 const statusTitle = document.getElementById('statusTitle');
@@ -31,6 +26,38 @@ const maxWeightEl = document.getElementById('maxWeight');
 const marginEl = document.getElementById('margin');
 
 const OFFSHORE_STANDARD_EXACT = {"image": "assets/offshore_standard_chart_clip.png", "main": {"xMin": 81.379, "xMax": 271.707, "kgMin": 5800, "kgMax": 6800, "yZeroFt": 388.388, "yTopFt": 165.047, "maxPaFt": 5000}, "headwind": {"yTop": 436.584, "yBottom": 488.12, "maxKt": 20}, "tempCurves": {"-40": [[271.707, 433.182], [271.707, 165.047]], "-30": [[271.707, 433.182], [271.707, 182.876], [270.762, 180.671], [270.223, 179.962], [269.681, 179.253], [269.138, 178.546], [268.592, 177.839], [268.045, 177.133], [267.497, 176.428], [266.947, 175.723], [266.397, 175.018], [265.846, 174.314], [265.295, 173.609], [264.744, 172.905], [264.193, 172.2], [263.643, 171.495], [263.093, 170.789], [262.545, 170.083], [261.998, 169.376], [261.452, 168.669], [260.908, 167.96], [260.367, 167.251], [258.603, 165.047]], "-20": [[271.707, 433.182], [271.707, 232.017], [271.329, 229.812], [269.628, 227.544], [267.183, 224.395], [264.741, 221.243], [262.302, 218.087], [259.867, 214.928], [257.435, 211.766], [255.005, 208.601], [252.579, 205.433], [250.156, 202.263], [247.736, 199.09], [245.319, 195.914], [242.906, 192.736], [240.495, 189.557], [238.087, 186.375], [235.682, 183.191], [233.28, 180.006], [230.88, 176.819], [228.484, 173.631], [226.091, 170.442], [223.7, 167.251], [221.999, 165.047]], "-10": [[271.707, 433.182], [271.707, 278.954], [271.329, 276.686], [267.927, 272.275], [263.739, 266.802], [259.558, 261.324], [255.383, 255.841], [251.216, 250.353], [247.055, 244.859], [242.902, 239.359], [238.756, 233.854], [234.619, 228.343], [230.491, 222.825], [226.371, 217.301], [222.26, 211.77], [218.159, 206.232], [214.067, 200.686], [209.986, 195.134], [205.915, 189.573], [201.855, 184.005], [197.806, 178.429], [193.768, 172.844], [189.742, 167.251], [188.167, 165.047]], "0": [[271.707, 433.182], [271.707, 323.622], [270.762, 321.417], [264.724, 313.528], [258.712, 305.628], [252.727, 297.715], [246.767, 289.79], [240.83, 281.854], [234.915, 273.905], [229.022, 265.944], [223.148, 257.971], [217.293, 249.985], [211.456, 241.988], [205.635, 233.978], [199.828, 225.956], [194.036, 217.921], [188.256, 209.875], [182.487, 201.816], [176.728, 193.745], [170.979, 185.661], [165.237, 177.565], [159.501, 169.457], [156.351, 165.047]], "10": [[271.707, 433.182], [271.707, 368.29], [271.139, 366.085], [269.438, 363.817], [267.738, 361.612], [264.391, 357.175], [261.048, 352.735], [257.709, 348.292], [254.375, 343.845], [251.045, 339.396], [247.719, 334.943], [244.399, 330.487], [241.083, 326.027], [237.773, 321.563], [234.468, 317.095], [231.168, 312.623], [227.874, 308.147], [224.586, 303.667], [221.304, 299.182], [218.028, 294.693], [214.758, 290.198], [211.495, 285.699], [208.238, 281.195], [204.988, 276.686], [203.35, 274.481], [201.775, 272.275], [200.137, 270.007], [198.812, 268.123], [197.487, 266.239], [196.16, 264.356], [194.833, 262.474], [193.505, 260.593], [192.176, 258.712], [190.847, 256.832], [189.517, 254.952], [188.187, 253.073], [186.856, 251.194], [185.525, 249.315], [184.194, 247.437], [182.862, 245.558], [181.531, 243.68], [180.199, 241.801], [178.867, 239.923], [177.536, 238.044], [176.204, 236.165], [174.873, 234.285], [173.298, 232.017], [171.723, 229.812], [170.296, 227.816], [168.872, 225.819], [167.448, 223.82], [166.026, 221.821], [164.605, 219.82], [163.184, 217.819], [161.764, 215.817], [160.344, 213.815], [158.925, 211.813], [157.506, 209.811], [156.086, 207.809], [154.666, 205.807], [153.245, 203.806], [151.823, 201.806], [150.401, 199.806], [148.977, 197.808], [147.551, 195.811], [146.124, 193.816], [144.695, 191.822], [142.805, 189.617], [140.978, 187.349], [139.151, 185.144]], "20": [[271.707, 433.182], [271.707, 410.753], [270.825, 408.485], [269.124, 406.28], [265.788, 401.851], [262.457, 397.417], [259.133, 392.979], [255.814, 388.537], [252.502, 384.09], [249.194, 379.639], [245.893, 375.184], [242.597, 370.724], [239.307, 366.261], [236.022, 361.794], [232.742, 357.322], [229.468, 352.847], [226.198, 348.368], [222.934, 343.885], [219.676, 339.399], [216.422, 334.909], [213.173, 330.415], [209.928, 325.918], [206.689, 321.417], [205.114, 319.149], [203.539, 316.944], [201.964, 314.676], [200.633, 312.796], [199.302, 310.915], [197.971, 309.033], [196.64, 307.152], [195.309, 305.27], [193.978, 303.388], [192.647, 301.506], [191.315, 299.624], [189.983, 297.743], [188.651, 295.861], [187.319, 293.98], [185.986, 292.099], [184.652, 290.219], [183.318, 288.34], [181.983, 286.461], [180.648, 284.583], [179.312, 282.706], [177.975, 280.829], [176.637, 278.954], [175.062, 276.686], [171.912, 272.275], [170.455, 270.248], [169.007, 268.215], [167.566, 266.177], [166.128, 264.136], [164.693, 262.093], [163.257, 260.05], [161.819, 258.01], [160.377, 255.973], [158.927, 253.941], [157.468, 251.916], [155.998, 249.9], [154.514, 247.894], [153.015, 245.9], [151.497, 243.92], [149.959, 241.956], [148.399, 240.008], [146.814, 238.079], [145.202, 236.171], [143.561, 234.285], [141.734, 232.017], [139.907, 229.812], [138.08, 227.544]], "30": [[258.036, 433.182], [257.972, 433.119], [256.335, 430.851], [253.392, 426.884], [250.455, 422.914], [247.525, 418.942], [244.601, 414.965], [241.684, 410.986], [238.772, 407.003], [235.866, 403.016], [232.966, 399.026], [230.072, 395.032], [227.182, 391.035], [224.298, 387.033], [221.42, 383.028], [218.546, 379.018], [215.676, 375.004], [212.812, 370.987], [209.952, 366.964], [207.096, 362.938], [204.245, 358.907], [201.397, 354.871], [199.759, 352.666], [198.184, 350.461], [196.609, 348.193], [195.343, 346.431], [194.078, 344.668], [192.814, 342.905], [191.55, 341.141], [190.287, 339.377], [189.024, 337.613], [187.762, 335.848], [186.499, 334.083], [185.237, 332.318], [183.975, 330.553], [182.713, 328.788], [181.451, 327.023], [180.188, 325.258], [178.926, 323.494], [177.663, 321.729], [176.399, 319.965], [175.135, 318.202], [173.871, 316.439], [172.606, 314.676], [171.031, 312.471], [169.392, 310.203], [167.82, 308.329], [166.249, 306.454], [164.681, 304.577], [163.113, 302.699], [161.547, 300.819], [159.982, 298.939], [158.418, 297.058], [156.855, 295.176], [155.292, 293.293], [153.729, 291.411], [152.167, 289.528], [150.605, 287.645], [149.042, 285.763], [147.479, 283.881], [145.916, 281.999], [144.352, 280.118], [142.788, 278.238], [141.222, 276.359], [139.655, 274.481], [137.829, 272.275], [136.001, 270.007], [134.174, 267.802]], "40": [[228.677, 433.182], [228.613, 433.119], [226.976, 430.851], [225.401, 428.646], [224.553, 427.468], [223.706, 426.29], [222.858, 425.112], [222.01, 423.934], [221.162, 422.756], [220.314, 421.578], [219.466, 420.4], [218.618, 419.222], [217.77, 418.044], [216.921, 416.867], [216.072, 415.689], [215.224, 414.512], [214.374, 413.335], [213.525, 412.159], [212.675, 410.982], [211.825, 409.806], [210.974, 408.63], [210.123, 407.455], [209.272, 406.28], [207.697, 404.075], [206.059, 401.807], [205.122, 400.516], [204.186, 399.223], [203.251, 397.93], [202.316, 396.637], [201.383, 395.342], [200.45, 394.048], [199.517, 392.753], [198.584, 391.458], [197.652, 390.163], [196.719, 388.868], [195.786, 387.573], [194.853, 386.279], [193.919, 384.985], [192.984, 383.691], [192.048, 382.398], [191.111, 381.106], [190.173, 379.815], [189.234, 378.525], [188.293, 377.236], [186.403, 375.031], [184.513, 372.763], [182.686, 370.558], [180.133, 367.511], [177.582, 364.463], [175.034, 361.412], [172.488, 358.36], [169.943, 355.307], [167.4, 352.252], [164.859, 349.196], [162.319, 346.139], [159.781, 343.08], [157.243, 340.021], [154.706, 336.961], [152.171, 333.901], [149.635, 330.84], [147.1, 327.779], [144.566, 324.717], [142.031, 321.655], [139.496, 318.594], [136.961, 315.532], [134.426, 312.471], [132.599, 310.203], [130.772, 307.997]], "50": [[194.845, 433.182], [194.782, 433.119], [192.901, 430.887], [191.019, 428.656], [189.136, 426.426], [187.253, 424.197], [185.37, 421.967], [183.486, 419.738], [181.603, 417.509], [179.721, 415.279], [177.839, 413.049], [175.959, 410.817], [174.08, 408.585], [172.202, 406.351], [170.326, 404.116], [168.452, 401.879], [166.581, 399.639], [164.712, 397.397], [162.846, 395.153], [160.983, 392.906], [159.123, 390.656], [157.296, 388.388]]}, "headwindCurves": {"5800": [[81.379, 437.089], [82.198, 439.105], [84.34, 441.688], [87.49, 444.271], [89.369, 445.469], [91.312, 446.604], [93.312, 447.681], [95.364, 448.701], [97.462, 449.67], [99.6, 450.591], [101.772, 451.466], [103.972, 452.3], [106.195, 453.097], [108.435, 453.859], [110.686, 454.591], [112.941, 455.296], [115.196, 455.977], [117.444, 456.638], [119.679, 457.283], [121.897, 457.915], [124.089, 458.538], [126.252, 459.155], [128.379, 459.77], [138.207, 462.353], [148.539, 464.873], [152.774, 465.885], [157.015, 466.885], [161.262, 467.873], [165.514, 468.849], [169.771, 469.816], [174.032, 470.775], [178.296, 471.726], [182.563, 472.67], [186.832, 473.61], [191.102, 474.545], [195.373, 475.477], [199.645, 476.407], [203.915, 477.336], [208.185, 478.265], [212.453, 479.196], [216.719, 480.129], [220.981, 481.066], [225.24, 482.007], [229.495, 482.954], [240.08, 485.537], [249.153, 488.12]], "6000": [[119.432, 436.584], [120.251, 439.104], [122.456, 441.687], [126.11, 444.27], [131.213, 446.853], [133.291, 447.738], [135.393, 448.59], [137.519, 449.411], [139.665, 450.203], [141.83, 450.968], [144.01, 451.706], [146.205, 452.421], [148.411, 453.114], [150.626, 453.786], [152.849, 454.44], [155.076, 455.076], [157.305, 455.698], [159.535, 456.305], [161.764, 456.902], [163.987, 457.488], [166.205, 458.066], [168.413, 458.638], [170.611, 459.205], [172.795, 459.769], [183.316, 462.352], [194.341, 464.872], [197.318, 465.525], [200.291, 466.19], [203.259, 466.868], [206.225, 467.554], [209.188, 468.249], [212.148, 468.95], [215.108, 469.654], [218.066, 470.362], [221.025, 471.069], [223.983, 471.776], [226.943, 472.48], [229.904, 473.178], [232.867, 473.871], [235.834, 474.555], [238.803, 475.229], [241.777, 475.891], [244.755, 476.539], [247.739, 477.172], [250.728, 477.787], [260.682, 480.37], [269.691, 482.953], [271.707, 485.536], [271.707, 488.12]], "6200": [[157.485, 436.584], [158.871, 439.104], [161.832, 441.687], [166.179, 444.27], [171.975, 446.853], [178.969, 449.436], [187.033, 452.019], [195.979, 454.603], [205.807, 457.186], [216.392, 459.769], [227.606, 462.352], [237.56, 464.872], [247.704, 467.455], [258.539, 470.038], [270.132, 472.621], [271.707, 475.204], [271.707, 488.12]], "6400": [[195.538, 436.584], [197.869, 439.104], [201.649, 441.687], [204.433, 443.117], [207.255, 444.45], [210.11, 445.693], [212.997, 446.854], [215.911, 447.941], [218.849, 448.961], [221.81, 449.924], [224.789, 450.835], [227.784, 451.704], [230.791, 452.538], [233.807, 453.345], [236.83, 454.133], [239.856, 454.909], [242.883, 455.682], [245.906, 456.459], [248.924, 457.249], [251.932, 458.058], [254.929, 458.896], [257.91, 459.769], [267.486, 462.352], [271.707, 464.872], [271.707, 488.12]], "6600": [[233.465, 436.584], [236.678, 439.104], [241.277, 441.687], [247.136, 444.27], [254.193, 446.853], [262.446, 449.436], [271.139, 452.019], [271.707, 454.603], [271.707, 488.12]], "6800": [[271.518, 436.584], [271.707, 439.104], [271.707, 488.12]]}, "limits": {"maxOat": [[157.296, 388.388], [155.847, 386.183], [154.461, 383.915], [153.075, 381.71], [151.626, 379.505], [150.24, 377.237], [148.854, 375.032], [147.468, 372.764], [146.019, 370.559], [144.633, 368.291], [143.246, 366.086], [141.861, 363.817], [140.537, 361.612], [139.025, 359.344], [137.45, 357.139], [135.938, 354.871], [134.489, 352.666], [133.104, 350.461], [131.591, 348.193], [130.016, 345.988], [128.378, 343.72], [126.74, 341.515], [125.165, 339.247], [123.59, 337.042]], "hdLimit": [[140.096, 165.047], [140.096, 168.89], [140.033, 173.174], [139.97, 177.458], [139.908, 181.679], [139.782, 185.901], [139.718, 190.122], [139.592, 194.343], [139.466, 198.564], [139.341, 202.722], [139.214, 206.943], [139.088, 211.101], [138.9, 215.259], [138.647, 219.354], [138.395, 223.513], [138.143, 227.608], [137.829, 231.766], [137.45, 235.861], [137.136, 239.893], [136.758, 243.988], [136.379, 248.083], [136.001, 252.115], [135.623, 256.147], [135.245, 260.18], [134.867, 264.212], [134.489, 268.181], [134.175, 272.213], [133.796, 276.182], [133.481, 280.151], [133.104, 284.12], [132.725, 288.089], [132.347, 292.058], [131.906, 295.965], [131.528, 299.871], [131.024, 303.777], [130.583, 307.683], [130.016, 311.589], [129.449, 315.495], [128.882, 319.338], [128.189, 323.244], [127.496, 327.087], [126.74, 330.931], [125.228, 334.774], [123.59, 338.554]]}};
+const OFFSHORE_EAPS_ON_EXACT = {"main": {"xMin": 82.034, "xMax": 289.688, "kgMin": 4800, "kgMax": 6800, "yBottomFt": 432.153, "yZeroFt": 387.359, "yTopFt": 164.018, "minPaFt": -1000, "maxPaFt": 5000}, "headwind": {"xMin": 82.034, "xMax": 289.688, "kgMin": 4800, "kgMax": 6800, "yTop": 435.555, "yBottom": 487.09, "maxKt": 20}, "tempCurves": {"-40": [[289.688, 432.153], [289.688, 164.018]], "-30": [[289.688, 432.153], [289.688, 181.847], [289.184, 179.642], [287.316, 175.142], [285.4, 170.687], [283.451, 166.222], [282.506, 164.018]], "-20": [[289.688, 432.153], [289.688, 230.988], [289.499, 228.783], [285.77, 219.833], [281.845, 210.963], [278.285, 201.945], [277.34, 199.739], [276.394, 197.471], [272.431, 187.784], [268.444, 178.091], [264.424, 168.428], [263.542, 166.222], [262.597, 164.018]], "-10": [[289.688, 432.153], [289.688, 277.925], [289.499, 275.657], [287.609, 271.246], [286.664, 268.978], [280.104, 253.389], [273.813, 237.686], [267.385, 222.042], [266.44, 219.837], [265.558, 217.632], [258.657, 201.25], [252.464, 184.36], [244.642, 168.428], [243.571, 166.222], [242.5, 164.018]], "0": [[289.688, 432.153], [289.688, 322.593], [289.12, 320.388], [288.239, 318.12], [278.265, 294.393], [268.802, 270.419], [259.006, 246.613], [258.124, 244.408], [257.179, 242.203], [256.297, 239.935], [252.062, 229.044], [247.639, 219.172], [242.5, 208.686], [241.492, 206.418], [240.421, 204.213], [235.184, 193.053], [229.969, 181.885], [224.796, 170.696], [223.725, 168.428], [222.717, 166.222], [221.646, 164.018]], "10": [[289.688, 432.153], [289.688, 367.261], [289.373, 365.056], [278.016, 337.574], [267.043, 309.926], [255.793, 282.398], [254.91, 280.13], [253.966, 277.925], [253.084, 275.657], [247.12, 262.198], [240.579, 248.862], [234.434, 235.461], [233.426, 233.256], [232.356, 230.988], [226.535, 218.329], [220.667, 205.686], [214.905, 192.998], [213.897, 190.793], [212.825, 188.588], [211.817, 186.32]], "20": [[289.688, 432.153], [289.688, 409.724], [289.247, 407.456], [288.302, 405.251], [287.419, 403.046], [282.26, 390.383], [277.127, 377.699], [271.921, 365.056], [271.039, 362.788], [270.093, 360.583], [264.848, 347.548], [259.914, 335.188], [253.588, 322.593], [252.58, 320.388], [251.509, 318.12], [250.438, 315.915], [249.43, 313.647], [243.516, 301.002], [237.503, 288.362], [231.725, 275.657], [230.655, 273.452], [229.647, 271.246], [223.557, 258.584], [218.306, 245.533], [211.503, 233.256], [210.306, 230.988], [209.172, 228.783], [207.975, 226.515]], "30": [[282.191, 432.153], [282.191, 432.09], [281.245, 429.822], [280.364, 427.617], [275.73, 416.316], [271.197, 404.983], [265.622, 394.1], [264.613, 391.832], [263.542, 389.627], [258.252, 378.47], [252.999, 367.306], [247.792, 356.11], [246.721, 353.842], [245.713, 351.637], [244.642, 349.432], [243.634, 347.164], [238.405, 336.015], [233.223, 324.832], [228.072, 313.647], [227.064, 311.442], [225.93, 309.174], [219.56, 297.312], [213.342, 285.374], [207.093, 273.452], [205.959, 271.246], [204.762, 268.978], [203.628, 266.773]], "40": [[261.085, 432.153], [261.022, 432.09], [259.951, 429.822], [258.943, 427.617], [255.408, 420.175], [251.948, 412.697], [248.422, 405.251], [247.351, 403.046], [246.343, 400.778], [242.579, 392.348], [237.889, 384.383], [233.616, 376.207], [232.418, 374.002], [231.222, 371.734], [230.025, 369.529], [219.722, 350.244], [209.622, 330.87], [199.595, 311.442], [198.461, 309.174], [197.264, 306.968]], "50": [[135.648, 432.153], [135.585, 432.09], [126.569, 418.237], [117.246, 404.459], [109.88, 389.627], [108.746, 387.359]]}, "headwindCurves": {"4800": [[82.034, 435.555], [83.798, 438.075], [100.907, 462.63], [125.619, 474.433], [153.037, 484.507], [160.094, 487.09]], "5000": [[102.824, 435.555], [104.525, 438.075], [106.289, 440.658], [111.312, 447.557], [116.94, 453.553], [123.741, 458.74], [127.206, 461.323], [131.049, 463.843], [143.25, 471.123], [157.666, 476.853], [170.929, 481.924], [178.238, 484.507], [185.42, 487.09]], "5200": [[123.489, 435.555], [125.001, 438.075], [126.639, 440.658], [131.151, 447.611], [137.487, 453.937], [144.217, 458.74], [148.249, 461.323], [152.722, 463.843], [166.197, 471.05], [180.547, 476.824], [194.933, 481.924], [202.116, 484.507], [209.487, 487.09]], "5400": [[144.154, 435.555], [145.414, 438.075], [146.863, 440.658], [151.66, 448.403], [157.767, 453.978], [165.512, 458.74], [169.922, 461.323], [174.836, 463.843], [188.938, 471.116], [203.626, 476.634], [218.559, 481.924], [225.931, 484.507], [232.293, 487.09]], "5600": [[165.07, 435.555], [165.889, 438.075], [167.086, 440.658], [171.688, 448.885], [179.815, 454.306], [187.877, 458.74], [192.728, 461.323], [197.894, 463.843], [212.227, 471.0], [227.481, 475.964], [242.309, 481.924], [248.8, 484.507], [255.351, 487.09]], "5800": [[185.735, 435.555], [186.302, 438.075], [187.499, 440.658], [192.259, 449.087], [203.264, 454.464], [211.503, 458.74], [216.858, 461.323], [222.465, 463.843], [236.899, 470.19], [251.989, 475.928], [266.629, 481.924], [272.426, 484.507], [277.402, 487.09]], "6000": [[206.589, 435.555], [207.03, 438.075], [208.227, 440.658], [212.581, 447.353], [223.342, 452.665], [230.277, 456.157], [235.696, 458.74], [241.429, 461.323], [253.893, 466.235], [265.746, 471.989], [278.222, 476.758], [283.64, 479.341], [288.553, 481.924], [289.688, 484.507], [289.688, 487.09]], "6200": [[227.379, 435.555], [228.134, 438.075], [229.709, 440.658], [232.104, 443.241], [235.254, 445.824], [239.097, 448.407], [243.507, 450.99], [248.359, 453.574], [253.714, 456.157], [259.51, 458.74], [265.621, 461.323], [271.039, 463.843], [276.583, 466.426], [282.506, 469.009], [288.806, 471.592], [289.688, 474.175], [289.688, 487.09]], "6400": [[248.107, 435.555], [249.367, 438.075], [256.692, 448.171], [271.687, 452.99], [282.127, 458.74], [287.357, 461.323], [289.688, 463.843], [289.688, 487.09]], "6600": [[268.834, 435.555], [270.598, 438.075], [273.055, 440.658], [276.268, 443.241], [280.11, 445.824], [284.647, 448.407], [289.373, 450.99], [289.688, 453.574], [289.688, 487.09]], "6800": [[289.561, 435.555], [289.688, 438.075], [289.688, 487.09]]}, "limits": {"maxOat": [[108.746, 387.359], [109.502, 385.153], [110.321, 382.885], [111.078, 380.68], [111.833, 378.475], [112.653, 376.207], [113.408, 374.002], [114.165, 371.734], [114.858, 369.529], [115.55, 367.261], [116.244, 365.056], [116.874, 362.788], [117.441, 360.583], [118.008, 358.315], [118.512, 356.11], [119.016, 353.842], [119.394, 351.637], [119.772, 349.431], [120.149, 347.163], [120.402, 344.958], [120.654, 342.69], [120.843, 340.485], [120.969, 338.217], [121.095, 336.012]], "hdLimit": [[211.44, 164.018], [211.44, 167.86], [211.376, 172.144], [211.314, 176.429], [211.25, 180.65], [211.188, 184.871], [211.062, 189.092], [210.873, 193.313], [210.684, 197.534], [210.495, 201.692], [210.117, 205.913], [209.739, 210.072], [209.298, 214.23], [208.857, 218.325], [208.416, 222.483], [208.038, 226.578], [207.597, 230.736], [207.219, 234.831], [206.841, 238.863], [206.462, 242.958], [206.084, 247.054], [205.643, 251.086], [205.265, 255.118], [204.824, 259.15], [204.32, 263.182], [203.816, 267.151], [203.312, 271.183], [202.745, 275.152], [202.115, 279.121], [201.485, 283.091], [200.855, 287.06], [200.162, 291.029], [199.469, 294.935], [198.713, 298.841], [197.957, 302.747], [197.138, 306.653], [195.185, 310.559], [186.617, 314.465], [177.356, 318.309], [166.33, 322.215], [154.864, 326.058], [142.956, 329.901], [130.608, 333.744], [120.465, 336.742]]}};
+const STANDARD_EXPORT_PAGE_PLACEMENT = { scale: 0.740971986, offsetX: 273.206409, offsetY: 594.946143 };
+const EAPS_PAGE_PLACEMENT = { offsetX: 194.6, offsetY: 272.4, scaleX: 2.224, scaleY: 2.223 };
+
+const standardClipImage = new Image();
+standardClipImage.src = 'assets/offshore_standard_chart_clip.png';
+const standardPageImage = new Image();
+standardPageImage.src = 'docs/page-07.png';
+const eapsPageImage = new Image();
+eapsPageImage.src = 'docs/page-09.png';
+
+const PROFILE_MAP = {
+  offshore_standard: {
+    id: 'offshore_standard', pageSrc: 'docs/page-07.png', pageImage: standardPageImage,
+    exportFileName: 'wac6800-offshore-standard.pdf',
+    previewTitle: 'Offshore Standard - página completa do RFM',
+    procedureLabel: 'Offshore Helideck', configLabel: 'Standard',
+    figureLabel: 'Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.',
+    referenceHtml: '<strong>Gráfico em uso:</strong> Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.<br><strong>Fonte:</strong> Leonardo AW139 Rotorcraft Flight Manual (RFM), Edition 2, Revision 32.'
+  },
+  offshore_eaps_on: {
+    id: 'offshore_eaps_on', pageSrc: 'docs/page-09.png', pageImage: eapsPageImage,
+    exportFileName: 'wac6800-offshore-eaps-on.pdf',
+    previewTitle: 'Offshore EAPS ON - página completa do RFM',
+    procedureLabel: 'Offshore Helideck', configLabel: 'EAPS ON',
+    figureLabel: 'Figure 4-9 — Weight Limitations for CAT A Offshore Helideck Procedure, EAPS ON.',
+    referenceHtml: '<strong>Gráfico em uso:</strong> Figure 4-9 — Weight Limitations for CAT A Offshore Helideck Procedure, EAPS ON.<br><strong>Fonte:</strong> Leonardo AW139 Rotorcraft Flight Manual (RFM), Edition 2, Revision 32.'
+  }
+};
+
+let currentResult = null;
+let activeProfile = null;
 
 const autoAdvanceRules = [
   { el: paEl, next: oatEl, minDigits: 3 },
@@ -40,10 +67,6 @@ const autoAdvanceRules = [
   { el: headwindEl, next: runBtn, minDigits: 1 }
 ];
 
-function digitsOnly(value) {
-  return String(value ?? '').replace(/[^0-9-]/g, '');
-}
-
 function sanitizeDigitsInput(el, maxLen = null) {
   const isNegativeAllowed = el === oatEl;
   let raw = String(el.value ?? '');
@@ -52,7 +75,6 @@ function sanitizeDigitsInput(el, maxLen = null) {
   const digits = raw.replace(/[^0-9]/g, '');
   el.value = negative + (maxLen ? digits.slice(0, maxLen) : digits);
 }
-
 function canAdvance(rule) {
   if (rule.offshoreOnly === true && procedureEl.value !== 'offshore') return false;
   if (rule.offshoreOnly === false && procedureEl.value === 'offshore') return false;
@@ -61,682 +83,101 @@ function canAdvance(rule) {
   if (rule.el === oatEl) return digits.length === rule.minDigits;
   return digits.length >= rule.minDigits;
 }
+function focusNext(target) { if (!target) return; if (target === runBtn) { runBtn.focus(); return; } target.focus(); target.select?.(); }
+function setupAutoAdvance() { autoAdvanceRules.forEach((rule) => { rule.el.addEventListener('input', () => { if (rule.el === oatEl) sanitizeDigitsInput(oatEl, 2); if (rule.el === paEl) sanitizeDigitsInput(paEl, 5); if (rule.el === weightEl) sanitizeDigitsInput(weightEl, 4); if (rule.el === headwindEl) sanitizeDigitsInput(headwindEl, 2); if (canAdvance(rule)) focusNext(rule.next); }); rule.el.addEventListener('keydown', (event) => { if (event.key === 'Enter') { event.preventDefault(); focusNext(rule.next); } }); }); }
+function toggleHeadwind() { const offshore = procedureEl.value === 'offshore'; headwindWrap.classList.toggle('hidden', !offshore); headwindEl.disabled = !offshore; if (!offshore) headwindEl.value = ''; }
+function getActiveProfile() { const key = `${procedureEl.value}_${configurationEl.value}`; return PROFILE_MAP[key] || null; }
+function syncProfileUi() { activeProfile = getActiveProfile(); const ref = activeProfile ? activeProfile.referenceHtml : '<strong>Gráfico em uso:</strong> perfil ainda não calibrado.<br><strong>Fonte:</strong> Leonardo AW139 Rotorcraft Flight Manual (RFM), Edition 2, Revision 32.'; chartReferenceEl.innerHTML = ref; chartHintEl.textContent = 'Overlay direto sobre a página completa do RFM: altitude, curvas de temperatura, peso atual, ponto sem vento e resultado final com headwind.'; formHintEl.textContent = 'Offshore Helideck + Standard e EAPS ON estão calibrados. Os demais perfis permanecem bloqueados até nova extração exata do gráfico.'; chartBaseImage.src = activeProfile ? activeProfile.pageSrc : 'docs/page-07.png'; chartBaseImage.alt = activeProfile ? activeProfile.previewTitle : 'Página completa do gráfico WAC'; updatePdfButtonLabel(); }
+function loadDemo() { procedureEl.value = 'offshore'; configurationEl.value = 'standard'; paEl.value = '100'; oatEl.value = '30'; weightEl.value = '6600'; headwindEl.value = '0'; toggleHeadwind(); syncProfileUi(); runCalculation(); }
+function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+function interp1(x, xp, fp) { if (xp.length !== fp.length || xp.length === 0) return NaN; if (x <= xp[0]) return fp[0]; if (x >= xp[xp.length - 1]) return fp[xp.length - 1]; for (let i = 0; i < xp.length - 1; i++) { if (x >= xp[i] && x <= xp[i + 1]) { const t = (x - xp[i]) / (xp[i + 1] - xp[i]); return fp[i] + t * (fp[i + 1] - fp[i]); } } return fp[fp.length - 1]; }
+function formatKg(v) { return `${Math.round(v).toLocaleString('pt-BR')} kg`; }
+function toPoints(rawPoints) { return rawPoints.map(([x, y]) => ({ x, y })); }
+function roundToFive(value) { return Math.round(value / 5) * 5; }
+function xAtY(points, y) { const intersections = []; for (let i = 0; i < points.length - 1; i++) { const p1 = points[i], p2 = points[i + 1]; const yMin = Math.min(p1.y, p2.y), yMax = Math.max(p1.y, p2.y); if (Math.abs(y - p1.y) < 0.001) intersections.push(p1.x); if (Math.abs(y - p2.y) < 0.001) intersections.push(p2.x); if (y >= yMin - 0.001 && y <= yMax + 0.001 && Math.abs(p2.y - p1.y) > 0.0001) { const t = (y - p1.y) / (p2.y - p1.y); if (t >= -0.001 && t <= 1.001) intersections.push(p1.x + t * (p2.x - p1.x)); } } if (!intersections.length) return NaN; return Math.max(...intersections); }
 
-function focusNext(target) {
-  if (!target) return;
-  if (target === runBtn) {
-    runBtn.focus();
-    return;
-  }
-  target.focus();
-  target.select?.();
-}
+function std_xToKg(x) { const m = OFFSHORE_STANDARD_EXACT.main; return m.kgMin + ((x - m.xMin) / (m.xMax - m.xMin)) * (m.kgMax - m.kgMin); }
+function std_kgToX(kg) { const m = OFFSHORE_STANDARD_EXACT.main; return m.xMin + ((kg - m.kgMin) / (m.kgMax - m.kgMin)) * (m.xMax - m.xMin); }
+function std_paToY(paFt) { const m = OFFSHORE_STANDARD_EXACT.main; const pa = clamp(paFt, 0, m.maxPaFt); return m.yZeroFt - (pa / m.maxPaFt) * (m.yZeroFt - m.yTopFt); }
+function std_hwToY(hwKt) { const hw = OFFSHORE_STANDARD_EXACT.headwind; const kt = clamp(hwKt, 0, hw.maxKt); return hw.yTop + (kt / hw.maxKt) * (hw.yBottom - hw.yTop); }
+function std_getSortedTemps() { return Object.keys(OFFSHORE_STANDARD_EXACT.tempCurves).map(Number).sort((a,b)=>a-b); }
+function std_getCurveForTemp(temp) { return toPoints(OFFSHORE_STANDARD_EXACT.tempCurves[String(temp)]); }
+function std_getNoWindLimit(paFt,oat) { const temps=std_getSortedTemps(); const paY=std_paToY(paFt); if(oat<temps[0]||oat>temps[temps.length-1]) return {error:'OAT fora da faixa do chart Offshore Standard (-40°C a 50°C).'}; let lower=temps[0], upper=temps[temps.length-1]; for(const t of temps){ if(t<=oat) lower=t; if(t>=oat){upper=t; break;} } const lowerCurve=std_getCurveForTemp(lower), upperCurve=std_getCurveForTemp(upper); const lowerX=xAtY(lowerCurve, paY), upperX=xAtY(upperCurve, paY); if(Number.isNaN(lowerX)||Number.isNaN(upperX)) return {error:'O ponto de altitude/OAT saiu da família explícita de curvas do chart Standard.'}; let interpolatedX=lowerX; if(lower!==upper){ const t=(oat-lower)/(upper-lower); interpolatedX=lowerX+t*(upperX-lowerX); } return {paY, lowerTemp:lower, upperTemp:upper, lowerCurve, upperCurve, lowerX, upperX, noWindX:interpolatedX, noWindKg:std_xToKg(interpolatedX)}; }
+function std_getHeadwindAdjustedLimit(baseKg, headwindKt) { const hw = clamp(headwindKt,0,OFFSHORE_STANDARD_EXACT.headwind.maxKt); const familyBases=Object.keys(OFFSHORE_STANDARD_EXACT.headwindCurves).map(Number).sort((a,b)=>a-b); const targetY=std_hwToY(hw); const familyValues=familyBases.map((base)=>{ const curve=toPoints(OFFSHORE_STANDARD_EXACT.headwindCurves[String(base)]); const x=xAtY(curve,targetY); return std_xToKg(x); }); return { hwY: targetY, familyBases, familyValues, maxKg: interp1(clamp(baseKg,familyBases[0],familyBases[familyBases.length-1]), familyBases, familyValues) }; }
+function calculateExactOffshoreStandard(paFt,oat,actualWeightKg,headwindKt) { const noWind=std_getNoWindLimit(paFt,oat); if(noWind.error) return noWind; const hw=std_getHeadwindAdjustedLimit(noWind.noWindKg, headwindKt); const maxWeight=roundToFive(Math.min(6800, hw.maxKg)); const margin=maxWeight-actualWeightKg; return { profileId:'offshore_standard', exact:true, noWind, hw, maxWeight, margin, within: margin>=0, actualWeightKg, paFt, oat, headwindKt }; }
 
-function setupAutoAdvance() {
-  autoAdvanceRules.forEach((rule) => {
-    rule.el.addEventListener('input', () => {
-      if (rule.el === oatEl) sanitizeDigitsInput(oatEl, 2);
-      if (rule.el === paEl) sanitizeDigitsInput(paEl, 5);
-      if (rule.el === weightEl) sanitizeDigitsInput(weightEl, 4);
-      if (rule.el === headwindEl) sanitizeDigitsInput(headwindEl, 2);
-      if (canAdvance(rule)) focusNext(rule.next);
-    });
-    rule.el.addEventListener('keydown', (event) => {
-      if (event.key === 'Enter') {
-        event.preventDefault();
-        focusNext(rule.next);
-      }
-    });
-  });
-}
+function eaps_xToKg(x) { const m = OFFSHORE_EAPS_ON_EXACT.main; return m.kgMin + ((x - m.xMin) / (m.xMax - m.xMin)) * (m.kgMax - m.kgMin); }
+function eaps_kgToX(kg) { const m = OFFSHORE_EAPS_ON_EXACT.main; return m.xMin + ((kg - m.kgMin) / (m.kgMax - m.kgMin)) * (m.xMax - m.xMin); }
+function eaps_paToY(paFt) { const m=OFFSHORE_EAPS_ON_EXACT.main; const pa=clamp(paFt,m.minPaFt,m.maxPaFt); const t=(pa-m.minPaFt)/(m.maxPaFt-m.minPaFt); return m.yBottomFt + t*(m.yTopFt-m.yBottomFt); }
+function eaps_hwToY(hwKt) { const hw=OFFSHORE_EAPS_ON_EXACT.headwind; const kt=clamp(hwKt,0,hw.maxKt); return hw.yTop + (kt/hw.maxKt)*(hw.yBottom-hw.yTop); }
+function eaps_getSortedTemps() { return Object.keys(OFFSHORE_EAPS_ON_EXACT.tempCurves).map(Number).sort((a,b)=>a-b); }
+function eaps_getCurveForTemp(temp) { return toPoints(OFFSHORE_EAPS_ON_EXACT.tempCurves[String(temp)]); }
+function eaps_getNoWindLimit(paFt,oat) { const temps=eaps_getSortedTemps(); const paY=eaps_paToY(paFt); if(oat<temps[0]||oat>temps[temps.length-1]) return {error:'OAT fora da faixa do Figure 4-9 (-40°C a 50°C).'}; let lower=temps[0], upper=temps[temps.length-1]; for(const t of temps){ if(t<=oat) lower=t; if(t>=oat){upper=t; break;} } const lowerCurve=eaps_getCurveForTemp(lower), upperCurve=eaps_getCurveForTemp(upper); const lowerX=xAtY(lowerCurve, paY), upperX=xAtY(upperCurve, paY); if(Number.isNaN(lowerX)||Number.isNaN(upperX)) return {error:'O ponto de altitude/OAT saiu da família explícita de curvas do Figure 4-9.'}; let interpolatedX=lowerX; if(lower!==upper){ const t=(oat-lower)/(upper-lower); interpolatedX=lowerX+t*(upperX-lowerX); } return {paY, lowerTemp:lower, upperTemp:upper, lowerCurve, upperCurve, lowerX, upperX, noWindX:interpolatedX, noWindKg:eaps_xToKg(interpolatedX)}; }
+function eaps_getHeadwindAdjustedLimit(baseKg, headwindKt) { const hw=clamp(headwindKt,0,OFFSHORE_EAPS_ON_EXACT.headwind.maxKt); if(hw===0) return { hwY: eaps_hwToY(0), familyBases: [], familyValues: [], maxKg: baseKg }; const familyBases=Object.keys(OFFSHORE_EAPS_ON_EXACT.headwindCurves).map(Number).sort((a,b)=>a-b); const targetY=eaps_hwToY(hw); const familyValues=familyBases.map((base)=>{ const curve=toPoints(OFFSHORE_EAPS_ON_EXACT.headwindCurves[String(base)]); const x=xAtY(curve,targetY); return eaps_xToKg(x); }); return { hwY: targetY, familyBases, familyValues, maxKg: interp1(clamp(baseKg,familyBases[0],familyBases[familyBases.length-1]), familyBases, familyValues) }; }
+function calculateExactEapsOn(paFt,oat,actualWeightKg,headwindKt) { const noWind=eaps_getNoWindLimit(paFt,oat); if(noWind.error) return noWind; const hw=eaps_getHeadwindAdjustedLimit(noWind.noWindKg, headwindKt); const maxWeight=roundToFive(Math.min(OFFSHORE_EAPS_ON_EXACT.main.kgMax, hw.maxKg)); const margin=maxWeight-actualWeightKg; return { profileId:'offshore_eaps_on', exact:true, noWind, hw, maxWeight, margin, within: margin>=0, actualWeightKg, paFt, oat, headwindKt }; }
 
-function toggleHeadwind() {
-  const offshore = procedureEl.value === 'offshore';
-  headwindWrap.classList.toggle('hidden', !offshore);
-  headwindEl.disabled = !offshore;
-  if (!offshore) headwindEl.value = '';
-}
-
-function loadDemo() {
-  procedureEl.value = 'offshore';
-  configurationEl.value = 'standard';
-  paEl.value = '100';
-  oatEl.value = '30';
-  weightEl.value = '6600';
-  headwindEl.value = '0';
-  toggleHeadwind();
-  runCalculation();
-}
-
-function clamp(value, min, max) {
-  return Math.min(max, Math.max(min, value));
-}
-
-function interp1(x, xp, fp) {
-  if (xp.length !== fp.length || xp.length === 0) return NaN;
-  if (x <= xp[0]) return fp[0];
-  if (x >= xp[xp.length - 1]) return fp[fp.length - 1];
-  for (let i = 0; i < xp.length - 1; i++) {
-    if (x >= xp[i] && x <= xp[i + 1]) {
-      const t = (x - xp[i]) / (xp[i + 1] - xp[i]);
-      return fp[i] + t * (fp[i + 1] - fp[i]);
-    }
-  }
-  return fp[fp.length - 1];
-}
-
-function formatKg(v) {
-  return `${Math.round(v).toLocaleString('pt-BR')} kg`;
-}
-
-function toPoints(rawPoints) {
-  return rawPoints.map(([x, y]) => ({ x, y }));
-}
-
-function xToKg(x) {
-  const m = OFFSHORE_STANDARD_EXACT.main;
-  return m.kgMin + ((x - m.xMin) / (m.xMax - m.xMin)) * (m.kgMax - m.kgMin);
-}
-
-function kgToX(kg) {
-  const m = OFFSHORE_STANDARD_EXACT.main;
-  return m.xMin + ((kg - m.kgMin) / (m.kgMax - m.kgMin)) * (m.xMax - m.xMin);
-}
-
-function paToY(paFt) {
-  const m = OFFSHORE_STANDARD_EXACT.main;
-  const pa = clamp(paFt, 0, m.maxPaFt);
-  return m.yZeroFt - (pa / m.maxPaFt) * (m.yZeroFt - m.yTopFt);
-}
-
-function hwToY(hwKt) {
-  const hw = OFFSHORE_STANDARD_EXACT.headwind;
-  const kt = clamp(hwKt, 0, hw.maxKt);
-  return hw.yTop + (kt / hw.maxKt) * (hw.yBottom - hw.yTop);
-}
-
-function xAtY(points, y) {
-  const intersections = [];
-  for (let i = 0; i < points.length - 1; i++) {
-    const p1 = points[i];
-    const p2 = points[i + 1];
-    const yMin = Math.min(p1.y, p2.y);
-    const yMax = Math.max(p1.y, p2.y);
-    if (Math.abs(y - p1.y) < 0.001) intersections.push(p1.x);
-    if (Math.abs(y - p2.y) < 0.001) intersections.push(p2.x);
-    if (y >= yMin - 0.001 && y <= yMax + 0.001 && Math.abs(p2.y - p1.y) > 0.0001) {
-      const t = (y - p1.y) / (p2.y - p1.y);
-      if (t >= -0.001 && t <= 1.001) {
-        intersections.push(p1.x + t * (p2.x - p1.x));
-      }
-    }
-  }
-  if (!intersections.length) return NaN;
-  return Math.max(...intersections);
-}
-
-function getSortedTemps() {
-  return Object.keys(OFFSHORE_STANDARD_EXACT.tempCurves).map(Number).sort((a, b) => a - b);
-}
-
-function getCurveForTemp(temp) {
-  return toPoints(OFFSHORE_STANDARD_EXACT.tempCurves[String(temp)]);
-}
-
-function getNoWindLimit(paFt, oat) {
-  const temps = getSortedTemps();
-  const paY = paToY(paFt);
-
-  if (oat < temps[0] || oat > temps[temps.length - 1]) {
-    return { error: 'OAT fora da faixa do chart Offshore Standard (-40°C a 50°C).' };
-  }
-
-  let lower = temps[0];
-  let upper = temps[temps.length - 1];
-  for (const t of temps) {
-    if (t <= oat) lower = t;
-    if (t >= oat) {
-      upper = t;
-      break;
-    }
-  }
-
-  const lowerCurve = getCurveForTemp(lower);
-  const upperCurve = getCurveForTemp(upper);
-  const lowerX = xAtY(lowerCurve, paY);
-  const upperX = xAtY(upperCurve, paY);
-
-  if (Number.isNaN(lowerX) || Number.isNaN(upperX)) {
-    return { error: 'O ponto de altitude/OAT saiu da família explícita de curvas do chart Standard.' };
-  }
-
-  let interpolatedX = lowerX;
-  if (lower !== upper) {
-    const t = (oat - lower) / (upper - lower);
-    interpolatedX = lowerX + t * (upperX - lowerX);
-  }
-
-  return {
-    paY,
-    lowerTemp: lower,
-    upperTemp: upper,
-    lowerCurve,
-    upperCurve,
-    lowerX,
-    upperX,
-    noWindX: interpolatedX,
-    noWindKg: xToKg(interpolatedX)
-  };
-}
-
-function getHeadwindAdjustedLimit(baseKg, headwindKt) {
-  const hw = clamp(headwindKt, 0, OFFSHORE_STANDARD_EXACT.headwind.maxKt);
-  const familyBases = Object.keys(OFFSHORE_STANDARD_EXACT.headwindCurves).map(Number).sort((a, b) => a - b);
-  const targetY = hwToY(hw);
-  const familyValues = familyBases.map((base) => {
-    const curve = toPoints(OFFSHORE_STANDARD_EXACT.headwindCurves[String(base)]);
-    const x = xAtY(curve, targetY);
-    return xToKg(x);
-  });
-  return {
-    hwY: targetY,
-    familyBases,
-    familyValues,
-    maxKg: interp1(clamp(baseKg, familyBases[0], familyBases[familyBases.length - 1]), familyBases, familyValues)
-  };
-}
-
-function roundToFive(value) {
-  return Math.round(value / 5) * 5;
-}
-
-function calculateExactOffshoreStandard(paFt, oat, actualWeightKg, headwindKt) {
-  const noWind = getNoWindLimit(paFt, oat);
-  if (noWind.error) return noWind;
-
-  const hw = getHeadwindAdjustedLimit(noWind.noWindKg, headwindKt);
-  const maxWeight = roundToFive(Math.min(6800, hw.maxKg));
-  const margin = maxWeight - actualWeightKg;
-  return {
-    mode: 'offshore-standard-exact',
-    exact: true,
-    noWind,
-    hw,
-    maxWeight,
-    margin,
-    within: margin >= 0,
-    actualWeightKg,
-    paFt,
-    oat,
-    headwindKt
-  };
-}
-
-function setCanvasSizeToImage() {
-  const rect = chartBaseImage.getBoundingClientRect();
-  const displayWidth = Math.max(1, Math.round(rect.width || chartBaseImage.naturalWidth || 900));
-  const displayHeight = Math.max(1, Math.round(rect.height || (displayWidth * (chartBaseImage.naturalHeight || 1137) / (chartBaseImage.naturalWidth || 900))));
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  chartCanvas.width = Math.round(displayWidth * dpr);
-  chartCanvas.height = Math.round(displayHeight * dpr);
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-}
-
-function drawBackgroundImage() {
-  return !!(chartExportPageImage.complete && chartExportPageImage.naturalWidth);
-}
-
-function ensureCanvasReady() {
-  if (!drawBackgroundImage()) return false;
-  const rect = chartCanvas.getBoundingClientRect();
-  const aspect = (chartExportPageImage.naturalWidth || 900) / (chartExportPageImage.naturalHeight || 1137);
-  const displayWidth = Math.max(1, Math.round(rect.width || chartExportPageImage.naturalWidth || 900));
-  const displayHeight = Math.max(1, Math.round(displayWidth / aspect));
-  const dpr = Math.max(1, window.devicePixelRatio || 1);
-  chartCanvas.width = Math.round(displayWidth * dpr);
-  chartCanvas.height = Math.round(displayHeight * dpr);
-  chartCanvas.style.height = `${displayHeight}px`;
-  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-  return true;
-}
-
-function drawOverlay(result) {
-  if (!ensureCanvasReady()) return;
-  const rect = chartCanvas.getBoundingClientRect();
-  ctx.clearRect(0, 0, rect.width, rect.height);
-  const preview = renderAnnotatedCanvas(result, { includeFooter: false, includeSummaryBox: true, compactSummaryBox: true });
-  if (preview) {
-    ctx.drawImage(preview, 0, 0, rect.width, rect.height);
-    return;
-  }
-  ctx.fillStyle = '#0b1017';
-  ctx.fillRect(0, 0, rect.width, rect.height);
-  ctx.fillStyle = '#e8eef7';
-  ctx.font = '700 28px Inter, system-ui, sans-serif';
-  ctx.fillText('Offshore Standard - página completa do RFM', 32, 48);
-  ctx.fillStyle = '#8ea0b7';
-  ctx.font = '20px Inter, system-ui, sans-serif';
-  ctx.fillText('Abra a visualização novamente quando a página do RFM estiver carregada.', 32, 84);
-}
-
-function roundRect(ctx, x, y, width, height, radius) {
-  ctx.moveTo(x + radius, y);
-  ctx.lineTo(x + width - radius, y);
-  ctx.quadraticCurveTo(x + width, y, x + width, y + radius);
-  ctx.lineTo(x + width, y + height - radius);
-  ctx.quadraticCurveTo(x + width, y + height, x + width - radius, y + height);
-  ctx.lineTo(x + radius, y + height);
-  ctx.quadraticCurveTo(x, y + height, x, y + height - radius);
-  ctx.lineTo(x, y + radius);
-  ctx.quadraticCurveTo(x, y, x + radius, y);
-}
-
-
-function drawLegendRow(targetCtx, startX, startY, items) {
-  targetCtx.save();
-  targetCtx.font = '20px Inter, system-ui, sans-serif';
-  targetCtx.textBaseline = 'middle';
-  let x = startX;
-  items.forEach((item) => {
-    targetCtx.fillStyle = item.color;
-    targetCtx.beginPath();
-    targetCtx.arc(x + 9, startY, 9, 0, Math.PI * 2);
-    targetCtx.fill();
-    targetCtx.fillStyle = '#c9d6e8';
-    targetCtx.fillText(item.label, x + 28, startY + 1);
-    x += 28 + targetCtx.measureText(item.label).width + 38;
-  });
-  targetCtx.restore();
-}
-
-function renderAnnotatedCanvas(result = currentResult, options = {}) {
-  if (!chartExportPageImage.complete || !chartExportPageImage.naturalWidth) return null;
-
-  const includeFooter = options.includeFooter ?? true;
-  const includeSummaryBox = options.includeSummaryBox ?? includeFooter;
-  const compactSummaryBox = options.compactSummaryBox ?? false;
-  const baseWidth = chartExportPageImage.naturalWidth;
-  const baseHeight = chartExportPageImage.naturalHeight;
-  const footerExtra = includeFooter ? 190 : 0;
-
-  const exportCanvas = document.createElement('canvas');
-  exportCanvas.width = baseWidth;
-  exportCanvas.height = baseHeight + footerExtra;
-  const ex = exportCanvas.getContext('2d');
-  ex.fillStyle = '#ffffff';
-  ex.fillRect(0, 0, exportCanvas.width, exportCanvas.height);
-  ex.drawImage(chartExportPageImage, 0, 0);
-  if (includeFooter) {
-    ex.fillStyle = '#ffffff';
-    ex.fillRect(0, baseHeight, baseWidth, footerExtra);
-  }
-
-  const clipPlacement = {
-    x: EXPORT_PAGE_PLACEMENT.offsetX,
-    y: EXPORT_PAGE_PLACEMENT.offsetY,
-    width: chartClipImage.naturalWidth * EXPORT_PAGE_PLACEMENT.scale,
-    height: chartClipImage.naturalHeight * EXPORT_PAGE_PLACEMENT.scale
-  };
-
-  const pxX = (x) => clipPlacement.x + ((x - 35) / (320 - 35)) * clipPlacement.width;
-  const pxY = (y) => clipPlacement.y + ((y - 145) / (505 - 145)) * clipPlacement.height;
-
-  const drawPolyline = (points, color, lineWidth = 2, dashed = false) => {
-    if (!points?.length) return;
-    ex.save();
-    ex.beginPath();
-    ex.setLineDash(dashed ? [10, 8] : []);
-    ex.strokeStyle = color;
-    ex.lineWidth = lineWidth;
-    points.forEach((point, index) => {
-      const x = pxX(point.x);
-      const y = pxY(point.y);
-      if (index === 0) ex.moveTo(x, y);
-      else ex.lineTo(x, y);
-    });
-    ex.stroke();
-    ex.restore();
-  };
-
-  const marker = (xPdf, yPdf, color, radius = 7) => {
-    const x = pxX(xPdf);
-    const y = pxY(yPdf);
-    ex.save();
-    ex.fillStyle = color;
-    ex.strokeStyle = '#081019';
-    ex.lineWidth = 2;
-    ex.beginPath();
-    ex.arc(x, y, radius, 0, Math.PI * 2);
-    ex.fill();
-    ex.stroke();
-    ex.restore();
-  };
-
-  if (result && !result.error) {
-    const withinColor = result.within ? '#14b86a' : '#df4f5f';
-    const blue = '#52a8ff';
-    const amber = '#f3b447';
-    drawPolyline(toPoints(OFFSHORE_STANDARD_EXACT.limits.maxOat), '#5b6bd4', 2, true);
-    drawPolyline(toPoints(OFFSHORE_STANDARD_EXACT.limits.hdLimit), '#5b6bd4', 2, true);
-    drawPolyline(result.noWind.lowerCurve, amber, 3);
-    if (result.noWind.upperTemp !== result.noWind.lowerTemp) drawPolyline(result.noWind.upperCurve, amber, 3);
-
-    const paY = result.noWind.paY;
-    const noWindX = result.noWind.noWindX;
-    const actualX = kgToX(result.actualWeightKg);
-    const maxX = kgToX(result.maxWeight);
-    const hwY = result.hw.hwY;
-
-    ex.save();
-    ex.strokeStyle = '#ffffff';
-    ex.lineWidth = 2.5;
-    ex.setLineDash([12, 10]);
-    ex.beginPath();
-    ex.moveTo(pxX(81.379), pxY(paY));
-    ex.lineTo(pxX(271.707), pxY(paY));
-    ex.stroke();
-
-    ex.setLineDash([]);
-    ex.strokeStyle = blue;
-    ex.beginPath();
-    ex.moveTo(pxX(actualX), pxY(388.388));
-    ex.lineTo(pxX(actualX), pxY(488.12));
-    ex.stroke();
-
-    ex.strokeStyle = withinColor;
-    ex.beginPath();
-    ex.moveTo(pxX(maxX), pxY(388.388));
-    ex.lineTo(pxX(maxX), pxY(488.12));
-    ex.stroke();
-
-    ex.setLineDash([10, 8]);
-    ex.strokeStyle = '#ffffff';
-    ex.beginPath();
-    ex.moveTo(pxX(81.379), pxY(hwY));
-    ex.lineTo(pxX(271.707), pxY(hwY));
-    ex.stroke();
-    ex.restore();
-
-    const dotRadius = includeFooter ? 5.5 : 4.5;
-    marker(noWindX, paY, '#ffffff', dotRadius + 1);
-    marker(actualX, paY, blue, dotRadius);
-    marker(maxX, hwY, withinColor, dotRadius + 1);
-
-    if (includeSummaryBox) {
-      const boxX = compactSummaryBox ? 72 : 56;
-      const boxY = compactSummaryBox ? 58 : 56;
-      const boxW = compactSummaryBox ? 900 : 940;
-      const boxH = compactSummaryBox ? 126 : 168;
-      ex.save();
-      ex.fillStyle = compactSummaryBox ? 'rgba(36,42,51,0.86)' : 'rgba(255,255,255,0.88)';
-      ex.strokeStyle = compactSummaryBox ? 'rgba(255,255,255,0.08)' : 'rgba(8,16,25,0.16)';
-      ex.lineWidth = 1;
-      ex.beginPath();
-      roundRect(ex, boxX, boxY, boxW, boxH, compactSummaryBox ? 24 : 18);
-      ex.fill();
-      ex.stroke();
-      ex.fillStyle = compactSummaryBox ? '#f2f5fb' : '#081019';
-      ex.font = compactSummaryBox ? '700 24px Inter, system-ui, sans-serif' : '700 28px Inter, system-ui, sans-serif';
-      ex.fillText('Offshore Standard - página completa do RFM', boxX + 22, boxY + (compactSummaryBox ? 38 : 40));
-      ex.font = compactSummaryBox ? '18px Inter, system-ui, sans-serif' : '20px Inter, system-ui, sans-serif';
-      if (!compactSummaryBox) {
-        ex.fillStyle = '#223247';
-        ex.fillText(`Procedure: Offshore Helideck | Configuration: Standard`, boxX + 22, boxY + 76);
-        ex.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | WT ${Math.round(result.actualWeightKg)} kg | HW ${Math.round(result.headwindKt)} kt`, boxX + 22, boxY + 106);
-        ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg | Margin ${result.margin >= 0 ? '+' : ''}${Math.round(result.margin)} kg`, boxX + 22, boxY + 136);
-      } else {
-        ex.fillStyle = '#d8e2f0';
-        ex.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | HW ${Math.round(result.headwindKt)} kt`, boxX + 22, boxY + 76);
-        ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg`, boxX + 22, boxY + 106);
-        ex.fillStyle = result.within ? '#7ef0b0' : '#ff8b98';
-        ex.fillText(`WT ${Math.round(result.actualWeightKg)} kg | Margin ${result.margin >= 0 ? '+' : ''}${Math.round(result.margin)} kg`, boxX + 520, boxY + 106);
-      }
-      ex.restore();
-    }
-
-    if (includeFooter) {
-      const legendY = baseHeight + 36;
-      drawLegendRow(ex, 80, legendY, [
-        { color: '#ffffff', label: 'Max weight interpolado' },
-        { color: '#52a8ff', label: 'Peso atual' },
-        { color: '#14b86a', label: 'Dentro' },
-        { color: '#df4f5f', label: 'Fora' }
-      ]);
-
-      ex.save();
-      ex.fillStyle = '#223247';
-      ex.font = '18px Inter, system-ui, sans-serif';
-      ex.fillText('Fonte: Leonardo AW139 Rotorcraft Flight Manual (RFM), Issue 2, Rev. 32.', 80, legendY + 50);
-      ex.fillText('Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.', 80, legendY + 78);
-      ex.fillText('Sempre consulte as publicações oficiais e atualizadas. Esta ferramenta não as substitui.', 80, legendY + 106);
-      ex.restore();
-    }
-  }
-
-  return exportCanvas;
-}
-
-function renderCompositeCanvas(result = currentResult) {
-  return renderAnnotatedCanvas(result, { includeFooter: true, includeSummaryBox: true });
-}
-
-function buildPdfBlobFromCanvas(canvas) {
-  const jpegData = canvas.toDataURL('image/jpeg', 0.92);
-  const base64 = jpegData.split(',')[1];
-  const imageBytes = atob(base64);
-  const imgLen = imageBytes.length;
-  const pageWidth = 595.28;
-  const pageHeight = pageWidth * canvas.height / canvas.width;
-
-  const pdfParts = [];
-  const offsets = [];
-  const push = (s) => pdfParts.push(typeof s === 'string' ? s : s);
-  const offset = () => pdfParts.reduce((n, part) => n + (typeof part === 'string' ? new TextEncoder().encode(part).length : part.length), 0);
-  const bin = Uint8Array.from(imageBytes, c => c.charCodeAt(0));
-
-  push(`%PDF-1.4
-`);
-  offsets.push(offset()); push(`1 0 obj
+function roundRect(targetCtx, x, y, width, height, radius) { targetCtx.moveTo(x+radius,y); targetCtx.lineTo(x+width-radius,y); targetCtx.quadraticCurveTo(x+width,y,x+width,y+radius); targetCtx.lineTo(x+width,y+height-radius); targetCtx.quadraticCurveTo(x+width,y+height,x+width-radius,y+height); targetCtx.lineTo(x+radius,y+height); targetCtx.quadraticCurveTo(x,y+height,x,y+height-radius); targetCtx.lineTo(x,y+radius); targetCtx.quadraticCurveTo(x,y,x+radius,y); }
+function drawLegendRow(targetCtx,startX,startY,items) { targetCtx.save(); targetCtx.font='20px Inter, system-ui, sans-serif'; targetCtx.textBaseline='middle'; let x=startX; items.forEach((item)=>{ targetCtx.fillStyle=item.color; targetCtx.beginPath(); targetCtx.arc(x+9,startY,9,0,Math.PI*2); targetCtx.fill(); targetCtx.fillStyle='#c9d6e8'; targetCtx.fillText(item.label,x+28,startY+1); x += 28 + targetCtx.measureText(item.label).width + 38; }); targetCtx.restore(); }
+function renderProfileAnnotatedCanvas(ex, exportCanvas, result, cfg) { const {profile,pxX,pxY,data,actualX,maxX,chartExtents,includeFooter,includeSummaryBox,compactSummaryBox}=cfg; const baseHeight = exportCanvas.height - (includeFooter ? 190 : 0); const drawPolyline=(points,color,lineWidth=2,dashed=false)=>{ if(!points?.length) return; ex.save(); ex.beginPath(); ex.setLineDash(dashed?[10,8]:[]); ex.strokeStyle=color; ex.lineWidth=lineWidth; points.forEach((point,index)=>{ const x=pxX(point.x), y=pxY(point.y); if(index===0) ex.moveTo(x,y); else ex.lineTo(x,y); }); ex.stroke(); ex.restore(); }; const marker=(xData,yData,color,radius=7)=>{ const x=pxX(xData), y=pxY(yData); ex.save(); ex.fillStyle=color; ex.strokeStyle='#081019'; ex.lineWidth=2; ex.beginPath(); ex.arc(x,y,radius,0,Math.PI*2); ex.fill(); ex.stroke(); ex.restore(); }; if(result && !result.error){ const withinColor=result.within?'#14b86a':'#df4f5f'; const blue='#52a8ff'; const amber='#f3b447'; drawPolyline(toPoints(data.limits.maxOat),'#5b6bd4',2,true); drawPolyline(toPoints(data.limits.hdLimit),'#5b6bd4',2,true); drawPolyline(result.noWind.lowerCurve,amber,3); if(result.noWind.upperTemp!==result.noWind.lowerTemp) drawPolyline(result.noWind.upperCurve,amber,3); const paY=result.noWind.paY, noWindX=result.noWind.noWindX, currentActualX=actualX(result.actualWeightKg), currentMaxX=maxX(result.maxWeight), hwY=result.hw.hwY; ex.save(); ex.strokeStyle='#ffffff'; ex.lineWidth=2.5; ex.setLineDash([12,10]); ex.beginPath(); ex.moveTo(pxX(chartExtents.xMin),pxY(paY)); ex.lineTo(pxX(chartExtents.xMax),pxY(paY)); ex.stroke(); ex.setLineDash([]); ex.strokeStyle=blue; ex.beginPath(); ex.moveTo(pxX(currentActualX),pxY(chartExtents.yMainBottom)); ex.lineTo(pxX(currentActualX),pxY(chartExtents.yHwBottom)); ex.stroke(); ex.strokeStyle=withinColor; ex.beginPath(); ex.moveTo(pxX(currentMaxX),pxY(chartExtents.yMainBottom)); ex.lineTo(pxX(currentMaxX),pxY(chartExtents.yHwBottom)); ex.stroke(); ex.setLineDash([10,8]); ex.strokeStyle='#ffffff'; ex.beginPath(); ex.moveTo(pxX(data.headwind.xMin||chartExtents.xMin),pxY(hwY)); ex.lineTo(pxX(data.headwind.xMax||chartExtents.xMax),pxY(hwY)); ex.stroke(); ex.restore(); const dotRadius=includeFooter?5.5:4.5; marker(noWindX,paY,'#ffffff',dotRadius+1); marker(currentActualX,paY,blue,dotRadius); marker(currentMaxX,hwY,withinColor,dotRadius+1); if(includeSummaryBox){ const boxX=compactSummaryBox?72:56, boxY=compactSummaryBox?58:56, boxW=compactSummaryBox?900:940, boxH=compactSummaryBox?126:168; ex.save(); ex.fillStyle=compactSummaryBox?'rgba(36,42,51,0.86)':'rgba(255,255,255,0.88)'; ex.strokeStyle=compactSummaryBox?'rgba(255,255,255,0.08)':'rgba(8,16,25,0.16)'; ex.lineWidth=1; ex.beginPath(); roundRect(ex,boxX,boxY,boxW,boxH,compactSummaryBox?24:18); ex.fill(); ex.stroke(); ex.fillStyle=compactSummaryBox?'#f2f5fb':'#081019'; ex.font=compactSummaryBox?'700 24px Inter, system-ui, sans-serif':'700 28px Inter, system-ui, sans-serif'; ex.fillText(profile.previewTitle,boxX+22,boxY+(compactSummaryBox?38:40)); ex.font=compactSummaryBox?'18px Inter, system-ui, sans-serif':'20px Inter, system-ui, sans-serif'; if(!compactSummaryBox){ ex.fillStyle='#223247'; ex.fillText(`Procedure: ${profile.procedureLabel} | Configuration: ${profile.configLabel}`,boxX+22,boxY+76); ex.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | WT ${Math.round(result.actualWeightKg)} kg | HW ${Math.round(result.headwindKt)} kt`,boxX+22,boxY+106); ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg | Margin ${result.margin>=0?'+':''}${Math.round(result.margin)} kg`,boxX+22,boxY+136); } else { ex.fillStyle='#d8e2f0'; ex.fillText(`PA ${Math.round(result.paFt)} ft | OAT ${result.oat}°C | HW ${Math.round(result.headwindKt)} kt`,boxX+22,boxY+76); ex.fillText(`No wind ${Math.round(result.noWind.noWindKg)} kg | Final ${Math.round(result.maxWeight)} kg`,boxX+22,boxY+106); ex.fillStyle=result.within?'#7ef0b0':'#ff8b98'; ex.fillText(`WT ${Math.round(result.actualWeightKg)} kg | Margin ${result.margin>=0?'+':''}${Math.round(result.margin)} kg`,boxX+520,boxY+106); } ex.restore(); } if(includeFooter){ const legendY=baseHeight+36; drawLegendRow(ex,80,legendY,[{color:'#ffffff',label:'Max weight interpolado'},{color:'#52a8ff',label:'Peso atual'},{color:'#14b86a',label:'Dentro'},{color:'#df4f5f',label:'Fora'}]); ex.save(); ex.fillStyle='#223247'; ex.font='18px Inter, system-ui, sans-serif'; ex.fillText('Fonte: Leonardo AW139 Rotorcraft Flight Manual (RFM), Issue 2, Rev. 32.',80,legendY+50); ex.fillText(profile.figureLabel,80,legendY+78); ex.fillText('Sempre consulte as publicações oficiais e atualizadas. Esta ferramenta não as substitui.',80,legendY+106); ex.restore(); } } return exportCanvas; }
+function renderStandardAnnotatedCanvas(result=currentResult, options={}) { if(!standardPageImage.complete||!standardPageImage.naturalWidth) return null; const includeFooter=options.includeFooter??true, includeSummaryBox=options.includeSummaryBox??true, compactSummaryBox=options.compactSummaryBox??false; const baseWidth=standardPageImage.naturalWidth, baseHeight=standardPageImage.naturalHeight, footerExtra=includeFooter?190:0; const exportCanvas=document.createElement('canvas'); exportCanvas.width=baseWidth; exportCanvas.height=baseHeight+footerExtra; const ex=exportCanvas.getContext('2d'); ex.fillStyle='#ffffff'; ex.fillRect(0,0,exportCanvas.width,exportCanvas.height); ex.drawImage(standardPageImage,0,0); if(includeFooter){ ex.fillStyle='#ffffff'; ex.fillRect(0,baseHeight,baseWidth,footerExtra); } const clipPlacement={ x: STANDARD_EXPORT_PAGE_PLACEMENT.offsetX, y: STANDARD_EXPORT_PAGE_PLACEMENT.offsetY, width: standardClipImage.naturalWidth*STANDARD_EXPORT_PAGE_PLACEMENT.scale, height: standardClipImage.naturalHeight*STANDARD_EXPORT_PAGE_PLACEMENT.scale }; const pxX=(x)=>clipPlacement.x + ((x-35)/(320-35))*clipPlacement.width; const pxY=(y)=>clipPlacement.y + ((y-145)/(505-145))*clipPlacement.height; return renderProfileAnnotatedCanvas(ex, exportCanvas, result, { profile: PROFILE_MAP.offshore_standard, pxX, pxY, data: OFFSHORE_STANDARD_EXACT, actualX: std_kgToX, maxX: std_kgToX, chartExtents: { xMin:81.379, xMax:271.707, yMainBottom:388.388, yHwBottom:488.12 }, includeFooter, includeSummaryBox, compactSummaryBox }); }
+function renderEapsAnnotatedCanvas(result=currentResult, options={}) { if(!eapsPageImage.complete||!eapsPageImage.naturalWidth) return null; const includeFooter=options.includeFooter??true, includeSummaryBox=options.includeSummaryBox??true, compactSummaryBox=options.compactSummaryBox??false; const baseWidth=eapsPageImage.naturalWidth, baseHeight=eapsPageImage.naturalHeight, footerExtra=includeFooter?190:0; const exportCanvas=document.createElement('canvas'); exportCanvas.width=baseWidth; exportCanvas.height=baseHeight+footerExtra; const ex=exportCanvas.getContext('2d'); ex.fillStyle='#ffffff'; ex.fillRect(0,0,exportCanvas.width,exportCanvas.height); ex.drawImage(eapsPageImage,0,0); if(includeFooter){ ex.fillStyle='#ffffff'; ex.fillRect(0,baseHeight,baseWidth,footerExtra); } const pxX=(x)=>EAPS_PAGE_PLACEMENT.offsetX + (x * EAPS_PAGE_PLACEMENT.scaleX); const pxY=(y)=>EAPS_PAGE_PLACEMENT.offsetY + (y * EAPS_PAGE_PLACEMENT.scaleY); return renderProfileAnnotatedCanvas(ex, exportCanvas, result, { profile: PROFILE_MAP.offshore_eaps_on, pxX, pxY, data: OFFSHORE_EAPS_ON_EXACT, actualX: eaps_kgToX, maxX: eaps_kgToX, chartExtents: { xMin: OFFSHORE_EAPS_ON_EXACT.main.xMin, xMax: OFFSHORE_EAPS_ON_EXACT.main.xMax, yMainBottom: OFFSHORE_EAPS_ON_EXACT.main.yBottomFt, yHwBottom: OFFSHORE_EAPS_ON_EXACT.headwind.yBottom }, includeFooter, includeSummaryBox, compactSummaryBox }); }
+function drawOverlay(result) { if(!activeProfile) return; const rect=chartCanvas.getBoundingClientRect(); const pageImage=activeProfile.id==='offshore_standard'?standardPageImage:eapsPageImage; if(!(pageImage.complete&&pageImage.naturalWidth)) return; const aspect=pageImage.naturalWidth/pageImage.naturalHeight; const displayWidth=Math.max(1,Math.round(rect.width||pageImage.naturalWidth)); const displayHeight=Math.max(1,Math.round(displayWidth/aspect)); const dpr=Math.max(1,window.devicePixelRatio||1); chartCanvas.width=Math.round(displayWidth*dpr); chartCanvas.height=Math.round(displayHeight*dpr); chartCanvas.style.height=`${displayHeight}px`; ctx.setTransform(dpr,0,0,dpr,0,0); ctx.clearRect(0,0,displayWidth,displayHeight); const preview = activeProfile.id==='offshore_standard' ? renderStandardAnnotatedCanvas(result,{includeFooter:false,includeSummaryBox:true,compactSummaryBox:true}) : renderEapsAnnotatedCanvas(result,{includeFooter:false,includeSummaryBox:true,compactSummaryBox:true}); if(preview) ctx.drawImage(preview,0,0,displayWidth,displayHeight); }
+function renderCompositeCanvas(result=currentResult) { if(!activeProfile) return null; return activeProfile.id==='offshore_standard' ? renderStandardAnnotatedCanvas(result,{includeFooter:true,includeSummaryBox:true}) : renderEapsAnnotatedCanvas(result,{includeFooter:true,includeSummaryBox:true}); }
+function buildPdfBlobFromCanvas(canvas) { const jpegData=canvas.toDataURL('image/jpeg',0.92), base64=jpegData.split(',')[1], imageBytes=atob(base64), imgLen=imageBytes.length, pageWidth=595.28, pageHeight=pageWidth*canvas.height/canvas.width; const pdfParts=[], offsets=[]; const push=(s)=>pdfParts.push(typeof s==='string'?s:s); const offset=()=>pdfParts.reduce((n,part)=>n+(typeof part==='string'?new TextEncoder().encode(part).length:part.length),0); const bin=Uint8Array.from(imageBytes,c=>c.charCodeAt(0)); push(`%PDF-1.4
+`); offsets.push(offset()); push(`1 0 obj
 << /Type /Catalog /Pages 2 0 R >>
 endobj
-`);
-  offsets.push(offset()); push(`2 0 obj
+`); offsets.push(offset()); push(`2 0 obj
 << /Type /Pages /Kids [3 0 R] /Count 1 >>
 endobj
-`);
-  offsets.push(offset()); push(`3 0 obj
+`); offsets.push(offset()); push(`3 0 obj
 << /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth.toFixed(2)} ${pageHeight.toFixed(2)}] /Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>
 endobj
-`);
-  offsets.push(offset()); push(`4 0 obj
+`); offsets.push(offset()); push(`4 0 obj
 << /Type /XObject /Subtype /Image /Width ${canvas.width} /Height ${canvas.height} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${imgLen} >>
 stream
 `); push(bin); push(`
 endstream
 endobj
-`);
-  const content = `q
+`); const content=`q
 ${pageWidth.toFixed(2)} 0 0 ${pageHeight.toFixed(2)} 0 0 cm
 /Im0 Do
 Q
-`;
-  offsets.push(offset()); push(`5 0 obj
+`; offsets.push(offset()); push(`5 0 obj
 << /Length ${content.length} >>
 stream
 ${content}endstream
 endobj
-`);
-  const xrefStart = offset();
-  push(`xref
+`); const xrefStart=offset(); push(`xref
 0 6
 0000000000 65535 f 
-`);
-  for (const off of offsets) push(`${String(off).padStart(10,'0')} 00000 n 
-`);
-  push(`trailer
+`); for(const off of offsets) push(`${String(off).padStart(10,'0')} 00000 n 
+`); push(`trailer
 << /Size 6 /Root 1 0 R >>
 startxref
 ${xrefStart}
-%%EOF`);
+%%EOF`); return new Blob(pdfParts,{type:'application/pdf'}); }
+async function shareOrDownloadPdfFromCanvas(canvas, fileName) { const blob=buildPdfBlobFromCanvas(canvas); const file=new File([blob], fileName, {type:'application/pdf'}); if(navigator.canShare && navigator.share){ try { if(navigator.canShare({files:[file]})){ await navigator.share({files:[file], title:'WAC 6800 PDF', text:'PDF do cálculo documentado.'}); return; } } catch(err) { if(err?.name==='AbortError') return; } } const url=URL.createObjectURL(blob); const a=document.createElement('a'); a.href=url; a.download=fileName; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),60000); }
+async function exportInterpolatedPdf() { if(!activeProfile || !currentResult || currentResult.error) { alert('Rode primeiro um cálculo válido em um perfil calibrado para gerar o PDF.'); return; } const canvas=renderCompositeCanvas(currentResult); if(!canvas){ alert('A página do RFM ainda não carregou. Abra a visualização do gráfico e tente novamente.'); return; } await shareOrDownloadPdfFromCanvas(canvas, activeProfile.exportFileName); }
+function updatePdfButtonLabel() { if(navigator.canShare && navigator.share){ try { const probe=new File([new Blob(['x'],{type:'application/pdf'})],'x.pdf',{type:'application/pdf'}); if(navigator.canShare({files:[probe]})){ exportPdfBtn.textContent='Compartilhar PDF'; return; } } catch(err) {} } exportPdfBtn.textContent='Baixar PDF'; }
+function runCalculation() { syncProfileUi(); const pa=Number(paEl.value), oat=Number(oatEl.value), actualWeight=Number(weightEl.value), headwind=Number(headwindEl.value||0); if([pa,oat,actualWeight].some(Number.isNaN)){ statusCard.className='card status neutral'; statusBadge.textContent='AGUARDANDO DADOS'; statusTitle.textContent='Envelope check'; statusText.textContent='Selecione procedure, configuration e preencha altitude, OAT e peso atual.'; maxWeightEl.textContent='—'; marginEl.textContent='—'; currentResult=null; drawOverlay(); return; } if(!activeProfile){ statusCard.className='card status neutral'; statusBadge.textContent='PERFIL NÃO CALIBRADO'; statusTitle.textContent='Modo ainda não calibrado'; statusText.textContent='Nesta fase, apenas Offshore Helideck + Standard e Offshore Helideck + EAPS ON estão calibrados.'; maxWeightEl.textContent='—'; marginEl.textContent='—'; currentResult=null; drawOverlay(); return; } let result = activeProfile.id==='offshore_standard' ? calculateExactOffshoreStandard(pa,oat,actualWeight,headwind) : calculateExactEapsOn(pa,oat,actualWeight,headwind); if(result.error){ statusCard.className='card status neutral'; statusBadge.textContent='PONTO FORA DA FAIXA'; statusTitle.textContent='Validação manual necessária'; statusText.textContent=result.error; maxWeightEl.textContent='—'; marginEl.textContent='—'; currentResult=result; drawOverlay(result); return; } statusCard.className=`card status ${result.within ? 'within':'out'}`; statusBadge.textContent = activeProfile.id==='offshore_standard' ? 'EXATO PDF STANDARD' : 'EXATO PDF EAPS ON'; statusTitle.textContent = result.within ? 'WITHIN ENVELOPE' : 'OUT OF ENVELOPE'; statusText.textContent = activeProfile.id==='offshore_standard' ? 'Resultado calculado com base nas curvas vetoriais do PDF do Offshore Standard.' : 'Resultado calculado com base nas curvas vetoriais do PDF do Offshore EAPS ON.'; maxWeightEl.textContent=formatKg(result.maxWeight); marginEl.textContent=`${result.margin>=0?'+':''}${Math.round(result.margin).toLocaleString('pt-BR')} kg`; currentResult=result; drawOverlay(result); }
 
-  return new Blob(pdfParts, { type: 'application/pdf' });
-}
-
-async function shareOrDownloadPdfFromCanvas(canvas) {
-  const blob = buildPdfBlobFromCanvas(canvas);
-  const file = new File([blob], EXPORT_FILE_NAME, { type: 'application/pdf' });
-
-  if (navigator.canShare && navigator.share) {
-    try {
-      if (navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'WAC 6800 PDF', text: 'PDF do cálculo documentado.' });
-        return;
-      }
-    } catch (err) {
-      if (err?.name === 'AbortError') return;
-    }
-  }
-
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = EXPORT_FILE_NAME;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-}
-
-async function exportInterpolatedPdf() {
-  const procedure = procedureEl.value;
-  const configuration = configurationEl.value;
-  if (!(procedure === 'offshore' && configuration === 'standard') || !currentResult || currentResult.error) {
-    alert('Rode primeiro um cálculo válido em Offshore Helideck + Standard para gerar o PDF.');
-    return;
-  }
-  const canvas = renderCompositeCanvas(currentResult);
-  if (!canvas) {
-    alert('A página do RFM ainda não carregou. Abra a visualização do gráfico e tente novamente.');
-    return;
-  }
-  await shareOrDownloadPdfFromCanvas(canvas);
-}
-
-function runCalculation() {
-  const procedure = procedureEl.value;
-  const configuration = configurationEl.value;
-  const pa = Number(paEl.value);
-  const oat = Number(oatEl.value);
-  const actualWeight = Number(weightEl.value);
-  const headwind = Number(headwindEl.value || 0);
-
-  if (!procedure || !configuration || [pa, oat, actualWeight].some(Number.isNaN)) {
-    statusCard.className = 'card status neutral';
-    statusBadge.textContent = 'AGUARDANDO DADOS';
-    statusTitle.textContent = 'Envelope check';
-    statusText.textContent = 'Selecione procedure, configuration e preencha altitude, OAT e peso atual.';
-    maxWeightEl.textContent = '—';
-    marginEl.textContent = '—';
-    currentResult = null;
-    currentResult = null;
-    drawOverlay();
-    return;
-  }
-
-  if (!(procedure === 'offshore' && configuration === 'standard')) {
-    statusCard.className = 'card status neutral';
-    statusBadge.textContent = 'STANDARD RESTAURADO';
-    statusTitle.textContent = 'Modo ainda não calibrado';
-    statusText.textContent = 'Nesta etapa, Offshore Helideck + Standard permanece restaurado e validado. EAPS ON e os demais perfis ficam bloqueados até nova calibração exata.';
-    maxWeightEl.textContent = '—';
-    marginEl.textContent = '—';
-    currentResult = null;
-    drawOverlay();
-    return;
-  }
-
-  const result = calculateExactOffshoreStandard(pa, oat, actualWeight, headwind);
-  if (result.error) {
-    statusCard.className = 'card status neutral';
-    statusBadge.textContent = 'PONTO FORA DA FAIXA';
-    statusTitle.textContent = 'Validação manual necessária';
-    statusText.textContent = result.error;
-    maxWeightEl.textContent = '—';
-    marginEl.textContent = '—';
-    currentResult = result;
-    drawOverlay(result);
-    return;
-  }
-
-  statusCard.className = `card status ${result.within ? 'within' : 'out'}`;
-  statusBadge.textContent = result.exact ? 'EXATO PDF STANDARD' : 'STANDARD';
-  statusTitle.textContent = result.within ? 'WITHIN ENVELOPE' : 'OUT OF ENVELOPE';
-  statusText.textContent = result.within
-    ? 'Resultado calculado com base nas curvas vetoriais do PDF do Offshore Standard.'
-    : 'Resultado calculado com base nas curvas vetoriais do PDF do Offshore Standard.';
-  maxWeightEl.textContent = formatKg(result.maxWeight);
-  marginEl.textContent = `${result.margin >= 0 ? '+' : ''}${Math.round(result.margin).toLocaleString('pt-BR')} kg`;
-  currentResult = result;
-  drawOverlay(result);
-}
-
-
-
-function updatePdfButtonLabel() {
-  if (navigator.canShare && navigator.share) {
-    try {
-      const probe = new File([new Blob(['x'], { type: 'application/pdf' })], 'x.pdf', { type: 'application/pdf' });
-      if (navigator.canShare({ files: [probe] })) {
-        exportPdfBtn.textContent = 'Compartilhar PDF';
-        return;
-      }
-    } catch (err) {}
-  }
-  exportPdfBtn.textContent = 'Baixar PDF';
-}
-
-toggleChart.addEventListener('click', () => {
-  chartPanel.classList.toggle('hidden');
-  toggleChart.textContent = chartPanel.classList.contains('hidden') ? 'Mostrar gráfico' : 'Ocultar gráfico';
-  if (!chartPanel.classList.contains('hidden')) drawOverlay();
-});
-
-exportPdfBtn.addEventListener('click', () => { exportInterpolatedPdf(); });
+toggleChart.addEventListener('click',()=>{ chartPanel.classList.toggle('hidden'); toggleChart.textContent=chartPanel.classList.contains('hidden')?'Mostrar gráfico':'Ocultar gráfico'; if(!chartPanel.classList.contains('hidden')) drawOverlay(currentResult); });
+exportPdfBtn.addEventListener('click', ()=>{ exportInterpolatedPdf(); });
 demoBtn.addEventListener('click', loadDemo);
 runBtn.addEventListener('click', runCalculation);
-procedureEl.addEventListener('change', () => {
-  toggleHeadwind();
-  runCalculation();
-});
-configurationEl.addEventListener('change', runCalculation);
-
-window.addEventListener('beforeinstallprompt', (event) => {
-  event.preventDefault();
-  deferredPrompt = event;
-  installBtn.classList.remove('hidden');
-});
-
-installBtn.addEventListener('click', async () => {
-  if (!deferredPrompt) return;
-  deferredPrompt.prompt();
-  await deferredPrompt.userChoice;
-  deferredPrompt = null;
-  installBtn.classList.add('hidden');
-});
-
-window.addEventListener('appinstalled', () => {
-  installBtn.classList.add('hidden');
-});
-
-chartBaseImage.addEventListener('load', () => {
-  if (!chartPanel.classList.contains('hidden')) drawOverlay(currentResult);
-});
-
-window.addEventListener('resize', () => {
-  if (!chartPanel.classList.contains('hidden')) drawOverlay(currentResult);
-});
+procedureEl.addEventListener('change', ()=>{ toggleHeadwind(); syncProfileUi(); currentResult=null; drawOverlay(); runCalculation(); });
+configurationEl.addEventListener('change', ()=>{ syncProfileUi(); currentResult=null; drawOverlay(); runCalculation(); });
+window.addEventListener('beforeinstallprompt',(event)=>{ event.preventDefault(); deferredPrompt=event; installBtn.classList.remove('hidden'); });
+installBtn.addEventListener('click', async ()=>{ if(!deferredPrompt) return; deferredPrompt.prompt(); await deferredPrompt.userChoice; deferredPrompt=null; installBtn.classList.add('hidden'); });
+window.addEventListener('appinstalled', ()=>{ installBtn.classList.add('hidden'); });
+chartBaseImage.addEventListener('load', ()=>{ if(!chartPanel.classList.contains('hidden')) drawOverlay(currentResult); });
+standardPageImage.addEventListener('load', ()=>{ if(activeProfile?.id==='offshore_standard' && !chartPanel.classList.contains('hidden')) drawOverlay(currentResult); });
+eapsPageImage.addEventListener('load', ()=>{ if(activeProfile?.id==='offshore_eaps_on' && !chartPanel.classList.contains('hidden')) drawOverlay(currentResult); });
+window.addEventListener('resize', ()=>{ if(!chartPanel.classList.contains('hidden')) drawOverlay(currentResult); });
 
 setupAutoAdvance();
 toggleHeadwind();
+syncProfileUi();
 updatePdfButtonLabel();
 drawOverlay();

@@ -74,7 +74,7 @@
         <button id="runBtn" class="primary">Check Envelope</button>
         <button id="demoBtn" class="ghost">Carregar demo</button>
       </div>
-      <p class="hint">Offshore Helideck + Standard está restaurado e validado. EAPS ON permanece em revisão até nova calibração exata no gráfico.</p>
+      <p id="formHint" class="hint">Offshore Helideck + Standard e EAPS ON estão calibrados. Os demais perfis permanecem bloqueados até nova extração exata do gráfico.</p>
     </section>
 
     <section id="statusCard" class="card status neutral">
@@ -108,7 +108,7 @@
       </div>
       <div id="chartPanel" class="chart-panel hidden">
         <div class="chart-stage">
-          <img id="chartBaseImage" src="docs/page-07.png" alt="Página completa do gráfico Offshore Standard">
+          <img id="chartBaseImage" src="docs/page-07.png" alt="Página completa do gráfico WAC">
           <canvas id="chartCanvas" width="900" height="1137" aria-label="Visual interpolation chart"></canvas>
         </div>
         <div class="legend">
@@ -117,8 +117,8 @@
           <span><i class="dot green"></i> Dentro</span>
           <span><i class="dot red"></i> Fora</span>
         </div>
-        <p class="hint">Overlay direto sobre a página completa do RFM: altitude, curvas de temperatura, peso atual, ponto sem vento e resultado final com headwind.</p>
-        <p class="chart-reference"><strong>Gráfico em uso:</strong> Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.<br><strong>Fonte:</strong> Leonardo AW139 Rotorcraft Flight Manual (RFM), Edition 2, Revision 32.</p>
+        <p id="chartHint" class="hint">Overlay direto sobre a página completa do RFM: altitude, curvas de temperatura, peso atual, ponto sem vento e resultado final com headwind.</p>
+        <p id="chartReference" class="chart-reference"><strong>Gráfico em uso:</strong> Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.<br><strong>Fonte:</strong> Leonardo AW139 Rotorcraft Flight Manual (RFM), Edition 2, Revision 32.</p>
       </div>
     </section>
 
