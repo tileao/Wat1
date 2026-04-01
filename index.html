@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#0b0f14">
-  <title>WAC 6800</title>
+  <title>WAT 6800</title>
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="stylesheet" href="styles.css">
 </head>
@@ -13,9 +13,9 @@
     <header class="hero">
       <div>
         <p class="eyebrow">AW139</p>
-        <h1>WAC 6800</h1>
-        <p class="subtitle">Envelope check com base nos charts WAT/WAC</p>
-        <p class="build-version">Build v16.2</p>
+        <h1>WAT 6800</h1>
+        <p class="subtitle">Envelope check com base nos WAT Charts</p>
+        <p class="build-version">Build v16.6.6</p>
       </div>
       <button id="installBtn" class="ghost hidden">Instalar</button>
     </header>
@@ -52,12 +52,18 @@
 
         <label class="field-half compact-field">
           <span>Pressure Altitude (ft)</span>
-          <input id="pressureAltitude" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="ex. 1200">
+          <div class="input-with-toggle">
+            <button id="paNegativeBtn" type="button" class="sign-toggle" aria-label="Alternar sinal da altitude pressão">±</button>
+            <input id="pressureAltitude" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="ex. 1200">
+          </div>
         </label>
 
         <label class="field-half compact-field narrow-field">
           <span>OAT (°C)</span>
-          <input id="oat" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="ex. 28" maxlength="2">
+          <div class="input-with-toggle">
+            <button id="oatNegativeBtn" type="button" class="sign-toggle" aria-label="Alternar sinal da temperatura">±</button>
+            <input id="oat" type="text" inputmode="numeric" enterkeyhint="next" autocomplete="off" placeholder="ex. 28" maxlength="3">
+          </div>
         </label>
 
         <label class="field-half compact-field">
@@ -109,7 +115,7 @@
       </div>
       <div id="chartPanel" class="chart-panel hidden">
         <div class="chart-stage">
-          <img id="chartBaseImage" src="docs/page-07.png" alt="Página completa do gráfico WAC">
+          <img id="chartBaseImage" src="docs/page-07.png" alt="Página completa do gráfico WAT">
           <canvas id="chartCanvas" width="900" height="1137" aria-label="Visual interpolation chart"></canvas>
         </div>
         <div class="legend">
@@ -119,7 +125,7 @@
           <span><i class="dot red"></i> Fora</span>
         </div>
         <p id="chartHint" class="hint">Overlay direto sobre a página completa do RFM: altitude, curvas de temperatura, peso atual, ponto sem vento e resultado final com headwind.</p>
-        <p id="chartReference" class="chart-reference"><strong>Gráfico em uso:</strong> Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.<br><strong>Fonte:</strong> Leonardo AW139 Rotorcraft Flight Manual (RFM), Edition 2, Revision 32.</p>
+        <p id="chartReference" class="chart-reference"><strong>Gráfico em uso:</strong> Figure 4-7 — Weight Limitations for CAT A Offshore Helideck Procedure.<br><strong>Suplemento:</strong> Supplement 50<br><strong>Página:</strong> S50-30<br><strong>Fonte:</strong> Leonardo AW139 Rotorcraft Flight Manual (RFM), Ed. 2, Rev. 32.</p>
       </div>
     </section>
 
@@ -134,6 +140,6 @@
     </section>
   </main>
 
-  <script src="app.js?v=allprofiles-v14_0-sup12-align" defer></script>
+  <script src="app.js?v=allprofiles-v16_6_5-confined6400-visual-align2" defer></script>
 </body>
 </html>
